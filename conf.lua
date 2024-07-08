@@ -4,7 +4,7 @@ function love.conf(t)
     t.externalstorage = true
     t.window.fullscreen = false
     t.window.usedpiscale = false
-    t.window.title = 'Map who'
+    t.window.title = 'BrewMapTool'
     t.window.resizable = true
     t.window.width = 1025
     t.window.height = 1025
