@@ -29,6 +29,13 @@ function scmapUtils.getHeightmapRawString(scmapData)
     return scmapData:getString(262322, (sizeX+1)*(sizeZ+1)*2)
 end
 
+function math.IBM16BinToDec(bytes)
+    return tonumber(('%0.2x%0.2x'):format(bytes:sub(2,2):byte(), bytes:sub(1,1):byte()), 16)
+end
+function math.IBM16BinToDec2(little, big)
+    return tonumber(('%0.2x%0.2x'):format(big:byte(), little:byte()), 16)
+end
+
 function love.filedropped(file)
     local filedir = file:getFilename()
     local filename = filedir:match'[^\\/]*$'
