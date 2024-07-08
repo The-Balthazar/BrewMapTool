@@ -79,6 +79,24 @@ function scmapUtils.renderHeightmapToCanvas(canvas, heightmap, minHeight, maxHei
     return canvas
 end
 
+local max, abs = math.max, math.abs
+local function canPathSlope(h,x,y)
+    local a,b,c,d = h[y-1][x-1],h[y][x-1],h[y][x],h[y-1][x]
+    return max(abs(a-b), abs(b-c), abs(c-d), abs(d-a)) <= 0.75--NOTE 0.75 MaxSlope from footprints.lua
+end
+
+function scmapUtils.getBlockingData(heightmap)
+    local width, height = #heightmap[0], #heightmap
+    local blockingMap = {}
+    for y=1, height do
+        blockingMap[y] = {}
+        for x=1, width do
+            blockingMap[y][x] = not canPathSlope(heightmap,x,y)
+        end
+    end
+    return blockingMap
+end
+
 function love.filedropped(file)
     local filedir = file:getFilename()
     local filename = filedir:match'[^\\/]*$'
