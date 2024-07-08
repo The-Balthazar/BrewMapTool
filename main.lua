@@ -79,6 +79,23 @@ function scmapUtils.renderHeightmapToCanvas(canvas, heightmap, minHeight, maxHei
     return canvas
 end
 
+function scmapUtils.renderBlockingToCanvas(canvas, blockmap, offset)
+    local width, height = #blockmap[1], #blockmap
+    if not canvas then canvas = love.graphics.newCanvas(width, height) end
+    love.graphics.setCanvas(canvas)
+    for x=1,width do
+        for y=1,height do
+            if blockmap[y][x] then
+                love.graphics.setColor(1, 0, 0)
+                love.graphics.points(x+(offset or 0.5),y+(offset or 0.5))
+            end
+        end
+    end
+    love.graphics.setCanvas()
+    love.graphics.setColor(1,1,1)
+    return canvas
+end
+
 local max, abs = math.max, math.abs
 local function canPathSlope(h,x,y)
     local a,b,c,d = h[y-1][x-1],h[y][x-1],h[y][x],h[y-1][x]
