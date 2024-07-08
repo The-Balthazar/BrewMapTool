@@ -36,6 +36,33 @@ function math.IBM16BinToDec2(little, big)
     return tonumber(('%0.2x%0.2x'):format(big:byte(), little:byte()), 16)
 end
 
+function scmapUtils.getHeightData(scmapData)
+    local width, height = scmapUtils.getSizes(scmapData)
+    local heightmapRawString = scmapUtils.getHeightmapRawString(scmapData)
+    local min, max = math.huge, 0
+
+    local heightmap = {}
+    local currentRow
+    local height
+    local index = -1
+    local yIndex = 0
+
+    for little, big in heightmapRawString:gmatch'(.)(.)' do
+        index=index+1
+        if index>width then index=0 end
+        if index==0 then
+            currentRow = {}
+            heightmap[yIndex] = currentRow
+            yIndex = yIndex+1
+        end
+        height = math.IBM16BinToDec2(little, big)
+        min = math.min(min, height)
+        max = math.max(max, height)
+        currentRow[index] = height
+    end
+    return heightmap, min, max
+end
+
 function love.filedropped(file)
     local filedir = file:getFilename()
     local filename = filedir:match'[^\\/]*$'
