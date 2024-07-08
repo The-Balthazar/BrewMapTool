@@ -1,4 +1,13 @@
+local drawcanvas
 function love.load()
+end
+
+function love.draw()
+    if drawcanvas then
+        local w,h = drawcanvas:getDimensions()
+        local scale = math.min(1025/w, 1025/h)
+        love.graphics.draw(drawcanvas, 0, 0, 0, scale, scale)
+    end
 end
 
 local scmapUtils = {}
@@ -122,7 +131,11 @@ function love.filedropped(file)
 
 	local data, bytesRead = file:read'data'
     local width, height = scmapUtils.getSizes(data)
-    local heightmapRaw = scmapUtils.getHeightmapRawString(data)
+    local heightmap, minHeight, maxHeight = scmapUtils.getHeightData(data)
 
-    love.filesystem.write(filename:match'([^\\/]*)%.scmap$'..'.raw', heightmapRaw)
+    drawcanvas = scmapUtils.renderHeightmapToCanvas(canvas, heightmap, minHeight, maxHeight)
+    scmapUtils.renderBlockingToCanvas(drawcanvas, scmapUtils.getBlockingData(heightmap))
+
+    --love.filesystem.write(filename:match'(.*)%.scmap$'..'.raw', scmapUtils.getHeightmapRawString(data))
+    love.window.setTitle("Map: "..filename.." - Render scale: x"..math.min(1025/(width+1), 1025/(height+1)))
 end
