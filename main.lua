@@ -55,7 +55,7 @@ function scmapUtils.getHeightData(scmapData)
             heightmap[yIndex] = currentRow
             yIndex = yIndex+1
         end
-        height = math.IBM16BinToDec2(little, big)
+        height = math.IBM16BinToDec2(little, big)/128--TODO get conversion from map. 128 is the default and only val in Ozones editor.
         min = math.min(min, height)
         max = math.max(max, height)
         currentRow[index] = height
