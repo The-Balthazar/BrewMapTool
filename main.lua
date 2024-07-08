@@ -63,6 +63,22 @@ function scmapUtils.getHeightData(scmapData)
     return heightmap, min, max
 end
 
+function scmapUtils.renderHeightmapToCanvas(canvas, heightmap, minHeight, maxHeight)
+    local width, height = #heightmap[0], #heightmap
+    if not canvas then canvas = love.graphics.newCanvas(width+1, height+1) end
+    love.graphics.setCanvas(canvas)
+    for x=0,width do
+        for y=0,height do
+            local normal = (heightmap[y][x]-minHeight)/(maxHeight-minHeight)
+            love.graphics.setColor(normal, normal, normal)
+            love.graphics.points(x+0.5,y+0.5)
+        end
+    end
+    love.graphics.setCanvas()
+    love.graphics.setColor(1,1,1)
+    return canvas
+end
+
 function love.filedropped(file)
     local filedir = file:getFilename()
     local filename = filedir:match'[^\\/]*$'
