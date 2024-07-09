@@ -34,7 +34,7 @@ function scmapUtils.readDatastream(scmapData)
     end
 
     local function int() return math.IMBInt(readBytes(4)) end
-    local function float() return (readBytes(4)) end
+    local function float() return math.IMBFloat(readBytes(4)) end
     local function short() return math.IBMShort(readBytes(2)) end
     local function vec2() return {float(),float()} end
     local function vec3() return {float(),float(),float()} end
@@ -148,7 +148,7 @@ function scmapUtils.readDatastream(scmapData)
     data.miniMapLandEndColor = int()
 
     if data.version>56 then
-        data.unknownFA = readBytes(4)
+        data.unknownFA = math.formatBytes(readBytes(4))
     end
 
     data.textures = {}
@@ -156,8 +156,8 @@ function scmapUtils.readDatastream(scmapData)
     for i=1, 10 do table.insert(data.textures, {path = stringNull(), scale = float()}) end
     for i=1, 9  do table.insert(data.normals,  {path = stringNull(), scale = float()}) end
 
-    data.unknown1 = readBytes(4)
-    data.unknown2 = readBytes(4)
+    data.unknown1 = math.formatBytes(readBytes(4))
+    data.unknown2 = math.formatBytes(readBytes(4))
 
     data.decals = {}
     for i=1, int() do
