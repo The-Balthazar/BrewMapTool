@@ -141,11 +141,11 @@ function scmapUtils.readDatastream(scmapData)
     end
 
     data.miniMapContourInterval = int()
-    data.miniMapDeepWaterColor = int()
-    data.miniMapContourColor = int()
-    data.miniMapShoreColor = int()
-    data.miniMapLandStartColor = int()
-    data.miniMapLandEndColor = int()
+    data.miniMapDeepWaterColor = math.formatBytes(readBytes(4))
+    data.miniMapContourColor = math.formatBytes(readBytes(4))
+    data.miniMapShoreColor = math.formatBytes(readBytes(4))
+    data.miniMapLandStartColor = math.formatBytes(readBytes(4))
+    data.miniMapLandEndColor = math.formatBytes(readBytes(4))
 
     if data.version>56 then
         data.unknownFA = math.formatBytes(readBytes(4))
