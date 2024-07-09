@@ -64,7 +64,36 @@ function scmapUtils.getBlockingData(heightmap)
     return blockingMap
 end
 
+local formats = {
+    scmap = function(filename, file)
+        local data = scmapUtils.readDatastream(file:read'data')
+        local heightmap, minHeight, maxHeight = scmapUtils.readHeightmap(data.heightmap, data.size[1], data.size[2], heightmapScale)
+
+        drawcanvas = scmapUtils.renderHeightmapToCanvas(nil, heightmap, minHeight, maxHeight)
+        scmapUtils.renderBlockingToCanvas(drawcanvas, scmapUtils.getBlockingData(heightmap))
+
+        love.window.setTitle("Map: "..filename.." - Render scale: x"..math.min(1025/(data.size[1]+1), 1025/(data.size[2]+1)))
+    end,
+    raw = function(filename, file)
+        local data = file:read'data'
+        local sizeGuess = math.sqrt(data:getSize()/2)
+        if sizeGuess%1~=0 then return print"Can't guess raw file size" end
+        local heightmap, minHeight, maxHeight = scmapUtils.readHeightmap(data:getString(), sizeGuess-1, sizeGuess-1, 1)
+        drawcanvas = scmapUtils.renderHeightmapToCanvas(nil, heightmap, minHeight, maxHeight)
+
+        love.window.setTitle("Raw: "..filename.." - Render scale: x"..math.min(1025/sizeGuess, 1025/sizeGuess))
+    end,
+}
+
 function love.filedropped(file)
     local filedir = file:getFilename()
     local filename = filedir:match'[^\\/]*$'
+    local format = filename:match'%.([^.]*)$'
+    local handler = format and formats[format:lower()]
+    if handler then
+        if not file:open'r' then return print(filename, "failed to load") end
+        handler(filename, file)
+    else
+        print("Unknown file format: ", format)
+    end
 end
