@@ -38,10 +38,10 @@ function scmapUtils.getHeightmapRawString(scmapData)
     return scmapData:getString(262322, (sizeX+1)*(sizeZ+1)*2)
 end
 
-function math.IBM16BinToDec(bytes)
+function math.IBMShort(bytes)
     return tonumber(('%0.2x%0.2x'):format(bytes:sub(2,2):byte(), bytes:sub(1,1):byte()), 16)
 end
-function math.IBM16BinToDec2(little, big)
+function math.IBMShort2(little, big)
     return tonumber(('%0.2x%0.2x'):format(big:byte(), little:byte()), 16)
 end
 
@@ -64,7 +64,7 @@ function scmapUtils.getHeightData(scmapData)
             heightmap[yIndex] = currentRow
             yIndex = yIndex+1
         end
-        height = math.IBM16BinToDec2(little, big)/128--TODO get conversion from map. 128 is the default and only val in Ozones editor.
+        height = math.IBMShort2(little, big)/128--TODO get conversion from map. 128 is the default and only val in Ozones editor.
         min = math.min(min, height)
         max = math.max(max, height)
         currentRow[index] = height
