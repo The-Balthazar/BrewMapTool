@@ -27,6 +27,12 @@ function scmapUtils.readDatastream(scmapData)
         return scmapData:getString(fileOffset-n, n)
     end
 
+    local function readBin(n, format)
+        local meta = {__format = format}
+        meta.__index = meta
+        return setmetatable({readBytes(n)}, meta)
+    end
+
     local function int() return math.IMBInt(readBytes(4)) end
     local function float() return (readBytes(4)) end
     local function short() return math.IBMShort(readBytes(2)) end
@@ -44,7 +50,7 @@ function scmapUtils.readDatastream(scmapData)
     end
     local function dds()
         local bytes = int()
-        return readBytes(bytes)
+        return readBin(bytes, 'dds')
     end
 
     data.width1 = float() --NOTE I have no idea what these are the width and height of
@@ -59,7 +65,7 @@ function scmapUtils.readDatastream(scmapData)
 
     data.size = {int(),int()}
     data.heightmapScale = float()
-    data.heightmap = readBytes((data.size[1]+1)*(data.size[2]+1)*2)--love.filesystem.write('heightmap.raw', data.heightmap)
+    data.heightmap = readBin((data.size[1]+1)*(data.size[2]+1)*2, 'raw')--love.filesystem.write('heightmap.raw', data.heightmap)
     if readBytes(1)~='\000' then return print"Unrecognised map file format" end
 
     data.shaderPath = stringNull()
@@ -198,11 +204,11 @@ function scmapUtils.readDatastream(scmapData)
 
     data.waterMap = dds()
     local halfSize = data.size[1]/2*data.size[2]/2
-    data.waterFoamMask = readBytes(halfSize)
-    data.waterFlatness = readBytes(halfSize)
-    data.waterDepthBiasMask = readBytes(halfSize)
+    data.waterFoamMask = readBin(halfSize, 'raw')
+    data.waterFlatness = readBin(halfSize, 'raw')
+    data.waterDepthBiasMask = readBin(halfSize, 'raw')
 
-    data.terrainType = readBytes(data.size[1]*data.size[2])
+    data.terrainType = readBin(data.size[1]*data.size[2], 'raw')
 
     if data.version>=60 then
         data.skyBox = {
@@ -287,6 +293,19 @@ function scmapUtils.readHeightmap(heightmapRaw, width, height, heightmapScale)
     return heightmap, min, max
 end
 
+function scmapUtils.exportScmapData(data, folder)
+    if folder then love.filesystem.createDirectory(folder) end
+    folder = (folder and folder..'/' or '')
+    for k, v in pairs(data) do
+        if type(v)=='table' and v.__format then
+            love.filesystem.write(folder..k..'.'..v.__format, v[1])
+            data[k] = nil
+        end
+    end
+    love.filesystem.write(folder..'data.lua', table.serialize(data))
+    love.system.openURL(love.filesystem.getSaveDirectory()..'/'..folder)
+end
+
 --NOTE lazy functions that assume a lot and don't parse the whole file
 
 --NOTE assumes that the embedded preview image is a fixed size. Use scmapUtils.readDatastream(scmapData).size[1] and [2] instead.
@@ -295,7 +314,7 @@ function scmapUtils.getSizes(scmapData)
            math.IBMShort(scmapData:getString(262306+4+4, 2))
 end
 
---NOTE assumes that the embedded preview image is a fixed size. Use scmapUtils.readDatastream(scmapData).heightmap instead.
+--NOTE assumes that the embedded preview image is a fixed size. Use scmapUtils.readDatastream(scmapData).heightmap[1] instead.
 function scmapUtils.getHeightmapRaw(scmapData)
     local sizeX, sizeZ = scmapUtils.getSizes(scmapData)
     return scmapData:getString(262322, (sizeX+1)*(sizeZ+1)*2)

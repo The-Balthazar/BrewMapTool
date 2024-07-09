@@ -1,4 +1,5 @@
 require'utils.maths'
+require'utils.table'
 require'utils.scmap'
 
 local drawcanvas
@@ -67,11 +68,12 @@ end
 local formats = {
     scmap = function(filename, file)
         local data = scmapUtils.readDatastream(file:read'data')
-        local heightmap, minHeight, maxHeight = scmapUtils.readHeightmap(data.heightmap, data.size[1], data.size[2], heightmapScale)
 
+        local heightmap, minHeight, maxHeight = scmapUtils.readHeightmap(data.heightmap[1], data.size[1], data.size[2], heightmapScale)--data.heightmapScale is currently an unparsed float.
         drawcanvas = scmapUtils.renderHeightmapToCanvas(nil, heightmap, minHeight, maxHeight)
         scmapUtils.renderBlockingToCanvas(drawcanvas, scmapUtils.getBlockingData(heightmap))
 
+        scmapUtils.exportScmapData(data, filename)
         love.window.setTitle("Map: "..filename.." - Render scale: x"..math.min(1025/(data.size[1]+1), 1025/(data.size[2]+1)))
     end,
     raw = function(filename, file)
