@@ -314,18 +314,21 @@ function scmapUtils.writeDatastream(files, filename)
     float(data.heightmapScale)
     local expectedHeightmapSize = (data.size[1]+1)*(data.size[2]+1)*2
     if #files['heightmap.raw']~=expectedHeightmapSize then print("Warning: Heightmap", #files['heightmap.raw'], "bytes. expected: ", expectedHeightmapSize, "bytes") end
+    print"Processing heightmap.raw"
     fileData = fileData..files['heightmap.raw']..'\000'
 
     stringNull(data.shaderPath)
     stringNull(data.backgroundPath)
     stringNull(data.skyCubePath)
 
+    print"Processing cubemaps"
     int(#data.cubeMaps)
     for i, map in ipairs(data.cubeMaps) do
         stringNull(map.name)
         stringNull(map.path)
     end
 
+    print"Processing lighting settings"
     local l = data.lightingSettings
     float(l.lightingMultiplier)
     vec3(l.sunDirection)
@@ -338,6 +341,7 @@ function scmapUtils.writeDatastream(files, filename)
     float(l.fogStart)
     float(l.fogEnd)
 
+    print"Processing water settings"
     l = data.waterSettings
     fileData = fileData..string.char(l.waterPresent and 1 or 0)
     float(l.elevation)
@@ -365,7 +369,9 @@ function scmapUtils.writeDatastream(files, filename)
         stringNull(v.path)
     end
 
-    int(#l.waveGenerators)
+    print"Processing wave generators"
+    local waveGenCount = #l.waveGenerators
+    int(waveGenCount)
     for i, v in ipairs(l.waveGenerators) do
         stringNull(v.textureName)
         stringNull(v.rampName)
@@ -383,8 +389,10 @@ function scmapUtils.writeDatastream(files, filename)
         float(v.frameRateFirst)
         float(v.frameRateSecond)
         float(v.stripCount)
+        print("Processing wave generators", i, "of", waveGenCount)
     end
 
+    print"Processing minimap data"
     int(data.miniMapContourInterval)
     fileData = fileData..hexSplit4(data.miniMapDeepWaterColor)
     fileData = fileData..hexSplit4(data.miniMapContourColor)
@@ -398,13 +406,17 @@ function scmapUtils.writeDatastream(files, filename)
 
     if #data.textures~=10 then print"Warning: textures an unexpected array length: expected 10" end
     if #data.normals~=9 then print"Warning: normals an unexpected array length: expected 9" end
+    print"Processing texture paths"
     for i, v in ipairs(data.textures) do stringNull(v.path) float(v.scale) end
+    print"Processing normal paths"
     for i, v in ipairs(data.normals) do stringNull(v.path) float(v.scale) end
 
     fileData = fileData..hexSplit4(data.unknown1)
     fileData = fileData..hexSplit4(data.unknown2)
 
-    int(#data.decals)
+    print"Processing decals"
+    local decalCount = #data.decals
+    int(decalCount)
     for i, decal in ipairs(data.decals) do
         int(decal.id)
         int(decal.type)
@@ -419,9 +431,12 @@ function scmapUtils.writeDatastream(files, filename)
         float(decal.LODCutoff)
         float(decal.LODCutoffMin)
         int(decal.army)
+        print("Processing decals", i, 'of', decalCount)
     end
 
-    int(#data.decalGroups)
+    print"Processing decal groups"
+    local decalGroupCount = #data.decalGroups
+    int(decalGroupCount)
     for i, group in ipairs(data.decalGroups) do
         int(group.id)
         stringNull(group.name)
@@ -429,6 +444,7 @@ function scmapUtils.writeDatastream(files, filename)
         for i, v in ipairs(group.data) do
             int(v)
         end
+        print("Processing decal groups", i, 'of', decalGroupCount)
     end
 
     int(data.intWidth)
@@ -436,14 +452,19 @@ function scmapUtils.writeDatastream(files, filename)
 
     int(1)
 
+    print"Processing normalMap.dds"
     image(files['normalMap.dds'])
+    print"Processing textureMaskLow.dds"
     image(files['textureMaskLow.dds'])
+    print"Processing textureMaskHigh.dds"
     image(files['textureMaskHigh.dds'])
 
     int(1)
 
+    print"Processing waterMap.dds"
     image(files['waterMap.dds'])
 
+    print"Processing remaining raw files"
     fileData = fileData
         ..files['waterFoamMask.raw']
         ..files['waterFlatness.raw']
@@ -451,6 +472,7 @@ function scmapUtils.writeDatastream(files, filename)
         ..files['terrainType.raw']
 
     if data.version>=60 then
+        print"Processing skyBox"
         l = data.skyBox
         vec3(l.position)
         float(l.horizonHeight)
@@ -492,7 +514,9 @@ function scmapUtils.writeDatastream(files, filename)
         float(l.clouds7)
     end
 
-    int(#data.props)
+    print"Processing props"
+    local propCount = #data.props
+    int(propCount)
     for i, prop in ipairs(data.props) do
         stringNull(prop.path)
         vec3(prop.position)
@@ -500,6 +524,7 @@ function scmapUtils.writeDatastream(files, filename)
         vec3(prop.rotationY)
         vec3(prop.rotationZ)
         vec3(prop.scale)
+        print("Processing props", i, 'of', propCount)
     end
     print("Writing", filename)
     love.filesystem.createDirectory('packed')
