@@ -186,7 +186,7 @@ function scmapUtils.readDatastream(scmapData)
             data = {},
         }
         for i=1, int() do
-            table.insert(data.group, int())
+            table.insert(group.data, int())
         end
         table.insert(data.decalGroups, group)
     end
