@@ -3,4 +3,6 @@ A quick tool for doing things with *Supreme Commander: Forged Alliance* binary `
 Made with LÖVE https://github.com/love2d/love. Requires LÖVE 12 so that `data:getString` can take offset values.
 
 
-Drop an scmap file into the window, and it'll unpack its contents, and display the heightmap and where units can't path. (Mostly)
+Drop an `.scmap` file into the window, and it'll unpack its contents, and display the heightmap and where units can't path.
+
+Drop an `.scmap` folder into the window and it'll repack its contents.
