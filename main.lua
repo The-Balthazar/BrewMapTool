@@ -20,7 +20,7 @@ function love.draw()
         love.graphics.draw(drawcanvas, 0, 0, 0, scale, scale)
     end
     for i, data in ipairs(progressChannels) do
-        local yPos = 512+(i-1)*40
+        local yPos = 10+(i-1)*40
         love.graphics.setColor(0,0,0)
         local title = data.name..(data.msg and ' - '..data.msg or '')
         for x=-1, 1 do
