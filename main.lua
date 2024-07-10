@@ -22,10 +22,10 @@ function love.draw()
     for i, data in ipairs(progressChannels) do
         local yPos = 512+(i-1)*40
         love.graphics.setColor(0,0,0)
-        local id = data.id..(data.msg and ' - '..data.msg or '')
+        local title = data.name..(data.msg and ' - '..data.msg or '')
         for x=-1, 1 do
             for y=-1, 1 do
-                love.graphics.print(id, 5+x, yPos+y)
+                love.graphics.print(title, 5+x, yPos+y)
             end
         end
         love.graphics.setColor(0.2,0.2,0.2)
@@ -40,13 +40,13 @@ function love.draw()
         love.graphics.setColor(0,0,0)
         love.graphics.rectangle("line", 1, yPos+20, 1023, 20, 5, 5, 5)
         love.graphics.setColor(1,1,1)
-        love.graphics.print(id, 5, yPos)
+        love.graphics.print(title, 5, yPos)
     end
 end
 
 function love.update(delta)
     for i, data in ipairs(progressChannels) do
-        while data.channel and data.channel:peek() do
+        while not data.done and data.channel and data.channel:peek() do
             local val = data.channel:pop()
             if type(val)=='string' then
                 data.msg = val
@@ -57,13 +57,14 @@ function love.update(delta)
             end
         end
     end
-    --[[for i=#progressChannels, 1, -1 do
+    for i=#progressChannels, 1, -1 do
         local data = progressChannels[i]
-        if data.total and data.progress and data.progress>=data.total then
-            table.remove(progressChannels, i)
+        if data.total and data.progress and data.progress>=data.total and not data.done then
+            data.done = true
+            --table.remove(progressChannels, i)
             workingFileNames[data.id] = nil
         end
-    end]]
+    end
 end
 
 function scmapUtils.renderHeightmapToCanvas(canvas, heightmap, minHeight, maxHeight)
@@ -155,13 +156,13 @@ end
 local directoryFormats = {
     scmap = function(dir)
         local id = dir:match'([^/]*)/*$'
-        if workingFileNames[id] then
+        if workingFileNames[dir] then
             print(id, "Already under way")
         else
-            workingFileNames[id] = true
+            workingFileNames[dir] = true
             love.thread.newThread'scmapwrite.lua':start()
             love.thread.getChannel'scmapwrite':push(dir)
-            table.insert(progressChannels, {channel=love.thread.getChannel(id), id=id})
+            table.insert(progressChannels, {channel=love.thread.getChannel(dir), name=id, id=dir})
 
             if love.filesystem.getInfo(dir..'heightmap.raw') then
                 local heightmapRaw = love.filesystem.read(dir..'heightmap.raw')

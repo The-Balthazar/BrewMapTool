@@ -39,8 +39,8 @@ if count==11 then
                         + 20
 
     local filename = dir:match'folderMount/(.*)/'
-    love.thread.getChannel(filename):push(progressTotal)
-    scmapUtils.writeDatastream(components, filename)
+    love.thread.getChannel(dir):push(progressTotal)
+    scmapUtils.writeDatastream(components, filename, dir)
 else
     return print("Folder contains", count, "of the 11 expected files. Expected:", [[
 

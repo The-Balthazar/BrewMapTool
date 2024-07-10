@@ -274,17 +274,20 @@ local function hex2bin4(a,b,c,d) return hex2bin(a)..hex2bin(b)..hex2bin(c)..hex2
 local function hexSplit4(val) return hex2bin4(val:sub(-8,-7),val:sub(-6,-5),val:sub(-4,-3),val:sub(-2,-1)) end
 local function hexSplitFlip4(val) return hex2bin4(val:sub(-2,-1),val:sub(-4,-3),val:sub(-6,-5),val:sub(-8,-7)) end
 
-local function progressReport(filename, message, ...)
-    love.thread.getChannel(filename):push(-1)
-    love.thread.getChannel(filename):push(message)
-    print(filename, message, ...)
+local function progressReport(dir, filename, message, i, t)
+    love.thread.getChannel(dir):push(-1)
+    if not i then
+        love.thread.getChannel(dir):push(message)
+    elseif i==1 or i==t or i%10==0 then
+        love.thread.getChannel(dir):push(('%s - %d of %d'):format(message, i, t))
+    end
 end
 
-function scmapUtils.writeDatastream(files, filename)
+function scmapUtils.writeDatastream(files, filename, dir)
     local fileData = scmapDef.header[1]..scmapDef.header[2]..scmapDef.header[3]..scmapDef.header[2]
     local data = files['data.lua']
 
-    progressReport(filename, "starting packing")
+    progressReport(dir, filename, "starting packing")
 
     local function float(val) fileData = fileData..hexSplit4(val) end
     local function vec2(vec) float(vec[1]) float(vec[2]) end
@@ -320,21 +323,21 @@ function scmapUtils.writeDatastream(files, filename)
     float(data.heightmapScale)
     local expectedHeightmapSize = (data.size[1]+1)*(data.size[2]+1)*2
     if #files['heightmap.raw']~=expectedHeightmapSize then print("Warning: Heightmap", #files['heightmap.raw'], "bytes. expected: ", expectedHeightmapSize, "bytes") end
-    progressReport(filename, "Processing heightmap.raw")
+    progressReport(dir, filename, "Processing heightmap.raw")
     fileData = fileData..files['heightmap.raw']..'\000'
 
     stringNull(data.shaderPath)
     stringNull(data.backgroundPath)
     stringNull(data.skyCubePath)
 
-    progressReport(filename, "Processing cubemaps")
+    progressReport(dir, filename, "Processing cubemaps")
     int(#data.cubeMaps)
     for i, map in ipairs(data.cubeMaps) do
         stringNull(map.name)
         stringNull(map.path)
     end
 
-    progressReport(filename, "Processing lighting settings")
+    progressReport(dir, filename, "Processing lighting settings")
     local l = data.lightingSettings
     float(l.lightingMultiplier)
     vec3(l.sunDirection)
@@ -347,7 +350,7 @@ function scmapUtils.writeDatastream(files, filename)
     float(l.fogStart)
     float(l.fogEnd)
 
-    progressReport(filename, "Processing water settings")
+    progressReport(dir, filename, "Processing water settings")
     l = data.waterSettings
     fileData = fileData..string.char(l.waterPresent and 1 or 0)
     float(l.elevation)
@@ -375,7 +378,7 @@ function scmapUtils.writeDatastream(files, filename)
         stringNull(v.path)
     end
 
-    progressReport(filename, "Processing wave generators")
+    progressReport(dir, filename, "Processing wave generators")
     local waveGenCount = #l.waveGenerators
     int(waveGenCount)
     for i, v in ipairs(l.waveGenerators) do
@@ -395,10 +398,10 @@ function scmapUtils.writeDatastream(files, filename)
         float(v.frameRateFirst)
         float(v.frameRateSecond)
         float(v.stripCount)
-        progressReport(filename, "Processing wave generators", i, "of", waveGenCount)
+        progressReport(dir, filename, "Processing wave generators", i, waveGenCount)
     end
 
-    progressReport(filename, "Processing minimap data")
+    progressReport(dir, filename, "Processing minimap data")
     int(data.miniMapContourInterval)
     fileData = fileData..hexSplit4(data.miniMapDeepWaterColor)
     fileData = fileData..hexSplit4(data.miniMapContourColor)
@@ -412,15 +415,15 @@ function scmapUtils.writeDatastream(files, filename)
 
     if #data.textures~=10 then print"Warning: textures an unexpected array length: expected 10" end
     if #data.normals~=9 then print"Warning: normals an unexpected array length: expected 9" end
-    progressReport(filename, "Processing texture paths")
+    progressReport(dir, filename, "Processing texture paths")
     for i, v in ipairs(data.textures) do stringNull(v.path) float(v.scale) end
-    progressReport(filename, "Processing normal paths")
+    progressReport(dir, filename, "Processing normal paths")
     for i, v in ipairs(data.normals) do stringNull(v.path) float(v.scale) end
 
     fileData = fileData..hexSplit4(data.unknown1)
     fileData = fileData..hexSplit4(data.unknown2)
 
-    progressReport(filename, "Processing decals")
+    progressReport(dir, filename, "Processing decals")
     local decalCount = #data.decals
     int(decalCount)
     for i, decal in ipairs(data.decals) do
@@ -437,10 +440,10 @@ function scmapUtils.writeDatastream(files, filename)
         float(decal.LODCutoff)
         float(decal.LODCutoffMin)
         int(decal.army)
-        progressReport(filename, "Processing decals", i, 'of', decalCount)
+        progressReport(dir, filename, "Processing decals", i, decalCount)
     end
 
-    progressReport(filename, "Processing decal groups")
+    progressReport(dir, filename, "Processing decal groups")
     local decalGroupCount = #data.decalGroups
     int(decalGroupCount)
     for i, group in ipairs(data.decalGroups) do
@@ -450,7 +453,7 @@ function scmapUtils.writeDatastream(files, filename)
         for i, v in ipairs(group.data) do
             int(v)
         end
-        progressReport(filename, "Processing decal groups", i, 'of', decalGroupCount)
+        progressReport(dir, filename, "Processing decal groups", i, decalGroupCount)
     end
 
     int(data.intWidth)
@@ -458,26 +461,26 @@ function scmapUtils.writeDatastream(files, filename)
 
     int(1)
 
-    progressReport(filename, "Processing normalMap.dds")
+    progressReport(dir, filename, "Processing normalMap.dds")
     image(files['normalMap.dds'])
-    progressReport(filename, "Processing textureMaskLow.dds")
+    progressReport(dir, filename, "Processing textureMaskLow.dds")
     image(files['textureMaskLow.dds'])
-    progressReport(filename, "Processing textureMaskHigh.dds")
+    progressReport(dir, filename, "Processing textureMaskHigh.dds")
     image(files['textureMaskHigh.dds'])
 
     int(1)
 
-    progressReport(filename, "Processing waterMap.dds")
+    progressReport(dir, filename, "Processing waterMap.dds")
     image(files['waterMap.dds'])
 
-    progressReport(filename, "Processing remaining raw files")
+    progressReport(dir, filename, "Processing remaining raw files")
     fileData = fileData
         ..files['waterFoamMask.raw']
         ..files['waterFlatness.raw']
         ..files['waterDepthBiasMask.raw']
         ..files['terrainType.raw']
 
-    progressReport(filename, "Processing skyBox")
+    progressReport(dir, filename, "Processing skyBox")
     if data.version>=60 then
         l = data.skyBox
         vec3(l.position)
@@ -520,7 +523,7 @@ function scmapUtils.writeDatastream(files, filename)
         float(l.clouds7)
     end
 
-    progressReport(filename, "Processing props")
+    progressReport(dir, filename, "Processing props")
     local propCount = #data.props
     int(propCount)
     for i, prop in ipairs(data.props) do
@@ -530,12 +533,12 @@ function scmapUtils.writeDatastream(files, filename)
         vec3(prop.rotationY)
         vec3(prop.rotationZ)
         vec3(prop.scale)
-        progressReport(filename, "Processing props", i, 'of', propCount)
+        progressReport(dir, filename, "Processing props", i, propCount)
     end
-    progressReport(filename, "Writing", filename)
+    progressReport(dir, filename, "Writing file")
     love.filesystem.createDirectory('packed')
     local done, msg = love.filesystem.write('packed/'..filename, fileData)
-    progressReport(filename, done and "Write complete" or msg)
+    progressReport(dir, filename, done and "Write complete" or msg)
     love.system.openURL(love.filesystem.getSaveDirectory()..'/packed')
 end
 
