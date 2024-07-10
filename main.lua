@@ -99,3 +99,60 @@ function love.filedropped(file)
         print("Unknown file format: ", format)
     end
 end
+
+local directoryFormats = {
+    scmap = function(dir)
+        local components = {
+            ["data.lua"] = 1,
+            ["heightmap.raw"] = true,
+            ["normalMap.dds"] = true,
+            ["previewImage.dds"] = true,
+            ["terrainType.raw"] = true,
+            ["textureMaskHigh.dds"] = true,
+            ["textureMaskLow.dds"] = true,
+            ["waterDepthBiasMask.raw"] = true,
+            ["waterFlatness.raw"] = true,
+            ["waterFoamMask.raw"] = true,
+            ["waterMap.dds"] = true,
+        }
+        local count = 0
+        for i, v in ipairs(love.filesystem.getDirectoryItems(dir)) do
+            if components[v] then
+                components[v] = love.filesystem[v:sub(-4)=='.lua' and 'load' or 'read'](dir..v)
+                count = count+1
+            end
+        end
+        if count==11 then
+            scmapUtils.writeDatastream(components, dir:match'folderMount/(.*)/')
+        else
+            return print("Folder contains", count, "of the 11 expected files. Expected:", [[
+
+                data.lua
+                heightmap.raw
+                normalMap.dds
+                previewImage.dds
+                terrainType.raw
+                textureMaskHigh.dds
+                textureMaskLow.dds
+                waterDepthBiasMask.raw
+                waterFlatness.raw
+                waterFoamMask.raw
+                waterMap.dds
+            ]])
+        end
+    end,
+    map = function(dir)
+        print"Folder received. Doing nothing with it. Drop an scmap file or extracted scmap folder."
+    end,
+}
+
+function love.directorydropped(folder)
+    local foldername = folder:match'[^\\/]*$'
+    local format = foldername:match'%.([^.]*)$'
+    local handler = format and directoryFormats[format:lower()] or directoryFormats.map
+    if handler then
+        local mountpoint = "folderMount/"..foldername
+        if not love.filesystem.mount(folder, mountpoint) then return print(foldername, "failed to mount") end
+        handler(mountpoint..'/')
+    end
+end
