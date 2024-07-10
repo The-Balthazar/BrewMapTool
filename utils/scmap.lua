@@ -28,9 +28,7 @@ function scmapUtils.readDatastream(scmapData)
     end
 
     local function readBin(n, format)
-        local meta = {__format = format}
-        meta.__index = meta
-        return setmetatable({readBytes(n)}, meta)
+        return {readBytes(n), __format = format}
     end
 
     local function int() return math.IMBInt(readBytes(4)) end
@@ -568,15 +566,22 @@ function scmapUtils.readHeightmap(heightmapRaw, width, height, heightmapScale)
 end
 
 function scmapUtils.exportScmapData(data, folder)
+    local channel = folder
+    love.thread.getChannel(folder):push(11)
     if folder then love.filesystem.createDirectory(folder) end
     folder = (folder and folder..'/' or '')
     for k, v in pairs(data) do
         if type(v)=='table' and v.__format then
+            love.thread.getChannel(channel):push("Writing "..k)
             love.filesystem.write(folder..k..'.'..v.__format, v[1])
             data[k] = nil
+            love.thread.getChannel(channel):push(-1)
         end
     end
+    love.thread.getChannel(channel):push("Writing data.lua")
     love.filesystem.write(folder..'data.lua', table.serialize(data))
+    love.thread.getChannel(channel):push("Done")
+    love.thread.getChannel(channel):push(-1)
     love.system.openURL(love.filesystem.getSaveDirectory()..'/'..folder)
 end
 

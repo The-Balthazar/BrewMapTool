@@ -122,11 +122,28 @@ local formats = {
     scmap = function(filename, file)
         local data = scmapUtils.readDatastream(file:read'data')
 
+        if workingFileNames[filename] then
+            print(filename, "Already under way")
+        else
+            workingFileNames[filename] = true
+            love.thread.getChannel'scmapunpack':push(data)
+            love.thread.getChannel'scmapunpack':push(filename)
+            love.thread.newThread[[
+                require'utils.maths'
+                require'utils.table'
+                require'utils.scmap'
+                require'love.system'
+
+                local channel = love.thread.getChannel'scmapunpack'
+                scmapUtils.exportScmapData(channel:demand(), channel:demand())
+            ]]:start()
+            table.insert(progressChannels, {channel=love.thread.getChannel(filename), name=filename, id=filename})
+        end
+
         local heightmap, minHeight, maxHeight = scmapUtils.readHeightmap(data.heightmap[1], data.size[1], data.size[2], heightmapScale)--data.heightmapScale is currently an unparsed float.
         drawcanvas = scmapUtils.renderHeightmapToCanvas(nil, heightmap, minHeight, maxHeight)
         scmapUtils.renderBlockingToCanvas(drawcanvas, scmapUtils.getBlockingData(heightmap))
 
-        scmapUtils.exportScmapData(data, filename)
         love.window.setTitle("Map: "..filename.." - Render scale: x"..math.min(1025/(data.size[1]+1), 1025/(data.size[2]+1)))
     end,
     raw = function(filename, file)
