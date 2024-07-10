@@ -53,19 +53,19 @@ function scmapUtils.readDatastream(scmapData)
         return readBin(bytes, 'dds')
     end
 
-    data.width1 = float() --NOTE I have no idea what these are the width and height of
-    data.height1 = float()
+    data.floatWidth = float()
+    data.floatHeight = float()
 
     if readBytes(6)~='\000\000\000\000\000\000' then return print"Unrecognised map file format" end
 
-    data.previewImage = dds()--love.filesystem.write('preview.dds', data.previewImage)
+    data.previewImage = dds()
 
     data.version = int()
     if data.version~=56 and data.version~=60 then return print("Unexpected scmap type version number", data.version) end
 
     data.size = {int(),int()}
     data.heightmapScale = float()
-    data.heightmap = readBin((data.size[1]+1)*(data.size[2]+1)*2, 'raw')--love.filesystem.write('heightmap.raw', data.heightmap)
+    data.heightmap = readBin((data.size[1]+1)*(data.size[2]+1)*2, 'raw')
     if readBytes(1)~='\000' then return print"Unrecognised map file format" end
 
     data.shaderPath = stringNull()
@@ -191,8 +191,8 @@ function scmapUtils.readDatastream(scmapData)
         table.insert(data.decalGroups, group)
     end
 
-    data.width2 = int()
-    data.height2 = int()
+    data.intWidth = int()
+    data.intHeight = int()
 
     if int()~=1 then return print"Unrecognised map file format" end
 
