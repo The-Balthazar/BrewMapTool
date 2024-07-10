@@ -42,7 +42,7 @@ function table.serialize(val, key, depth)
                     str =  str .. table.serialize(v, i, depth + 1) .. ",\n"
                 end
             else
-                for k, v in pairs(val) do
+                for k, v in sortedpairs(val) do
                     if type(k) == 'number' then
                         k = '['..tostring(k)..']'
                     elseif k:find'^%A' or k:find'[^%w_]' or reserved[k] then
@@ -94,7 +94,7 @@ function sortedpairs(set, sort)
     for k, v in pairs(set) do
         table.insert(keys, k)
     end
-    table.sort(keys, sort)
+    table.sort(keys, function(a,b)return tostring(a)<tostring(b) end)
 
     local i = 0
     return function()
