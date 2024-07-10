@@ -6,12 +6,64 @@ local drawcanvas
 function love.load()
 end
 
+local progressChannels = {}
+local workingFileNames = {}
+
+function love.threaderror(thread, errorstr)
+    print("Thread error:", errorstr)
+end
+
 function love.draw()
     if drawcanvas then
         local w,h = drawcanvas:getDimensions()
         local scale = math.min(1025/w, 1025/h)
         love.graphics.draw(drawcanvas, 0, 0, 0, scale, scale)
     end
+    for i, data in ipairs(progressChannels) do
+        local yPos = 512+(i-1)*40
+        love.graphics.setColor(0,0,0)
+        local id = data.id..(data.msg and ' - '..data.msg or '')
+        for x=-1, 1 do
+            for y=-1, 1 do
+                love.graphics.print(id, 5+x, yPos+y)
+            end
+        end
+        love.graphics.setColor(0.2,0.2,0.2)
+        love.graphics.rectangle("fill", 1, yPos+20, 1023, 20, 5, 5, 5)
+        if data.progress and data.total then
+            local progressNormal = data.progress/data.total
+            love.graphics.setColor(0.2,0.9,0.2)
+            love.graphics.rectangle("fill", 1+2.5, yPos+22.5, 1018*progressNormal, 20-5, 2.5, 2.5, 2.5)
+            love.graphics.setColor(0.3,0.8,0.3)
+            love.graphics.rectangle("line", 1+2.5, yPos+22.5, 1018*progressNormal, 20-5, 2.5, 2.5, 2.5)
+        end
+        love.graphics.setColor(0,0,0)
+        love.graphics.rectangle("line", 1, yPos+20, 1023, 20, 5, 5, 5)
+        love.graphics.setColor(1,1,1)
+        love.graphics.print(id, 5, yPos)
+    end
+end
+
+function love.update(delta)
+    for i, data in ipairs(progressChannels) do
+        while data.channel and data.channel:peek() do
+            local val = data.channel:pop()
+            if type(val)=='string' then
+                data.msg = val
+            elseif val>0 then
+                data.total = val
+            else
+                data.progress = (data.progress or 0)-val
+            end
+        end
+    end
+    --[[for i=#progressChannels, 1, -1 do
+        local data = progressChannels[i]
+        if data.total and data.progress and data.progress>=data.total then
+            table.remove(progressChannels, i)
+            workingFileNames[data.id] = nil
+        end
+    end]]
 end
 
 function scmapUtils.renderHeightmapToCanvas(canvas, heightmap, minHeight, maxHeight)
@@ -102,43 +154,22 @@ end
 
 local directoryFormats = {
     scmap = function(dir)
-        local components = {
-            ["data.lua"] = 1,
-            ["heightmap.raw"] = true,
-            ["normalMap.dds"] = true,
-            ["previewImage.dds"] = true,
-            ["terrainType.raw"] = true,
-            ["textureMaskHigh.dds"] = true,
-            ["textureMaskLow.dds"] = true,
-            ["waterDepthBiasMask.raw"] = true,
-            ["waterFlatness.raw"] = true,
-            ["waterFoamMask.raw"] = true,
-            ["waterMap.dds"] = true,
-        }
-        local count = 0
-        for i, v in ipairs(love.filesystem.getDirectoryItems(dir)) do
-            if components[v] then
-                components[v] = love.filesystem[v:sub(-4)=='.lua' and 'load' or 'read'](dir..v)
-                count = count+1
-            end
-        end
-        if count==11 then
-            scmapUtils.writeDatastream(components, dir:match'folderMount/(.*)/')
+        local id = dir:match'([^/]*)/*$'
+        if workingFileNames[id] then
+            print(id, "Already under way")
         else
-            return print("Folder contains", count, "of the 11 expected files. Expected:", [[
+            workingFileNames[id] = true
+            love.thread.newThread'scmapwrite.lua':start()
+            love.thread.getChannel'scmapwrite':push(dir)
+            table.insert(progressChannels, {channel=love.thread.getChannel(id), id=id})
 
-                data.lua
-                heightmap.raw
-                normalMap.dds
-                previewImage.dds
-                terrainType.raw
-                textureMaskHigh.dds
-                textureMaskLow.dds
-                waterDepthBiasMask.raw
-                waterFlatness.raw
-                waterFoamMask.raw
-                waterMap.dds
-            ]])
+            if love.filesystem.getInfo(dir..'heightmap.raw') then
+                local heightmapRaw = love.filesystem.read(dir..'heightmap.raw')
+                local sizeGuess = math.sqrt(heightmapRaw:len()/2)
+                if sizeGuess%1~=0 then return print"Can't guess heightmap size for preview" end
+                local heightmap, minHeight, maxHeight = scmapUtils.readHeightmap(heightmapRaw, sizeGuess-1, sizeGuess-1, 1)
+                drawcanvas = scmapUtils.renderHeightmapToCanvas(nil, heightmap, minHeight, maxHeight)
+            end
         end
     end,
     map = function(dir)
