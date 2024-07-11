@@ -311,7 +311,6 @@ function scmapUtils.writeDatastream(files, filename, dir)
 
     fileData = fileData..'\000\000\000\000\000\000'
 
-    if files['previewImage.dds']:len()~=262272 then print"Warning preview image isn't the expected 262272 bytes" end
     image(files['previewImage.dds'])
 
     int(data.version)
