@@ -585,23 +585,4 @@ function scmapUtils.exportScmapData(data, folder)
     love.system.openURL(love.filesystem.getSaveDirectory()..'/'..folder)
 end
 
---NOTE lazy functions that assume a lot and don't parse the whole file
-
---NOTE assumes that the embedded preview image is a fixed size. Use scmapUtils.readDatastream(scmapData).size[1] and [2] instead.
-function scmapUtils.getSizes(scmapData)
-    return math.IBMShort(scmapData:getString(262306+4, 2)),
-           math.IBMShort(scmapData:getString(262306+4+4, 2))
-end
-
---NOTE assumes that the embedded preview image is a fixed size. Use scmapUtils.readDatastream(scmapData).heightmap[1] instead.
-function scmapUtils.getHeightmapRaw(scmapData)
-    local sizeX, sizeZ = scmapUtils.getSizes(scmapData)
-    return scmapData:getString(262322, (sizeX+1)*(sizeZ+1)*2)
-end
-
---NOTE assumes that the embedded preview image is a fixed size, and that heightmapScale is default.
-function scmapUtils.getHeightData(scmapData)
-    return scmapUtils.readHeightmap(scmapUtils.getHeightmapRaw(scmapData), scmapUtils.getSizes(scmapData))
-end
-
 return scmapUtils
