@@ -557,7 +557,7 @@ function scmapUtils.readHeightmap(heightmapRaw, width, height, heightmapScale)
             heightmap[yIndex] = currentRow
             yIndex = yIndex+1
         end
-        height = math.IBMShort2(little, big)/(heightmapScale or 128)
+        height = math.IBMShort2(little, big)/(heightmapScale and (1/heightmapScale) or 128)
         min = math.min(min, height)
         max = math.max(max, height)
         currentRow[index] = height
