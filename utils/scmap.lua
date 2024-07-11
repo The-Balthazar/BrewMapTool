@@ -15,6 +15,14 @@ function scmapUtils.validateHeader(scmapData)
         and scmapData:getString(12, 4)==scmapDef.header[2]
 end
 
+local function isDDS(file) return file:sub(1,5)=='DDS |' and 'dds' end
+local function isTGA(file) return file:sub(-18)=='TRUEVISION-XFILE.\00' and 'tga' end
+local function isPNG(file) return file:sub(1,8)=='\137PNG\13\10\26\10' and 'png' end
+local function isJPG(file) return file:sub(1,2)=='\255\216' and file:sub(-2)=='\255\217' and 'jpg' end
+local function isBMP(file) return file:sub(1,2)=='BM' and file:len()==math.IMBInt(file:sub(3,6)) and 'bmp' end
+
+local function getFormat(file) return isDDS(file) or isTGA(file) or isPNG(file) or isJPG(file) or isBMP(file) or 'unknown' end
+
 function scmapUtils.readDatastream(scmapData)
     if not scmapUtils.validateHeader(scmapData) then return print"Unrecognised map header" end
     local data = {}
@@ -46,9 +54,10 @@ function scmapUtils.readDatastream(scmapData)
         end
         return str
     end
-    local function dds()
+    local function image()
         local bytes = int()
-        return readBin(bytes, 'dds')
+        local image = readBytes(bytes)
+        return {image, __format = getFormat(image)}
     end
 
     data.floatWidth = float()
@@ -56,7 +65,7 @@ function scmapUtils.readDatastream(scmapData)
 
     if readBytes(6)~='\000\000\000\000\000\000' then return print"Unrecognised map file format" end
 
-    data.previewImage = dds()
+    data.previewImage = image()
 
     data.version = int()
     if data.version~=56 and data.version~=60 then return print("Unexpected scmap type version number", data.version) end
@@ -194,13 +203,13 @@ function scmapUtils.readDatastream(scmapData)
 
     if int()~=1 then return print"Unrecognised map file format" end
 
-    data.normalMap = dds()
-    data.textureMaskLow = dds()
-    data.textureMaskHigh = dds()
+    data.normalMap = image()
+    data.textureMaskLow = image()
+    data.textureMaskHigh = image()
 
     if int()~=1 then return print"Unrecognised map file format" end
 
-    data.waterMap = dds()
+    data.waterMap = image()
     local halfSize = data.size[1]/2*data.size[2]/2
     data.waterFoamMask = readBin(halfSize, 'raw')
     data.waterFlatness = readBin(halfSize, 'raw')
