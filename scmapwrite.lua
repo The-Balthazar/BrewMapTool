@@ -7,25 +7,26 @@ local channel = love.thread.getChannel'scmapwrite'
 local dir = channel:demand()
 
 local components = {
-    ["data.lua"] = 1,
+    ["data.lua"] = true,
     ["heightmap.raw"] = true,
-    ["normalMap.dds"] = true,
-    ["previewImage.dds"] = true,
+    ["normalMap"] = true,
+    ["previewImage"] = true,
     ["terrainType.raw"] = true,
-    ["textureMaskHigh.dds"] = true,
-    ["textureMaskLow.dds"] = true,
+    ["textureMaskHigh"] = true,
+    ["textureMaskLow"] = true,
     ["waterDepthBiasMask.raw"] = true,
     ["waterFlatness.raw"] = true,
     ["waterFoamMask.raw"] = true,
-    ["waterMap.dds"] = true,
+    ["waterMap"] = true,
 }
 local count = 0
 for i, v in ipairs(love.filesystem.getDirectoryItems(dir)) do
-    if components[v] then
+    local key = components[v] and v or v:match'^([^.]*)'
+    if components[key] then
         if v:sub(-4)=='.lua' then
-            components[v] = love.filesystem.load(dir..v)()
+            components[key] = love.filesystem.load(dir..v)()
         else
-            components[v] = love.filesystem.read(dir..v)
+            components[key] = love.filesystem.read(dir..v)
         end
         count = count+1
     end

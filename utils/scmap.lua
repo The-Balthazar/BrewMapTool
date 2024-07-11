@@ -311,7 +311,7 @@ function scmapUtils.writeDatastream(files, filename, dir)
 
     fileData = fileData..'\000\000\000\000\000\000'
 
-    image(files['previewImage.dds'])
+    image(files.previewImage)
 
     int(data.version)
 
@@ -459,16 +459,16 @@ function scmapUtils.writeDatastream(files, filename, dir)
     int(1)
 
     progressReport(dir, filename, "Processing normalMap.dds")
-    image(files['normalMap.dds'])
+    image(files.normalMap)
     progressReport(dir, filename, "Processing textureMaskLow.dds")
-    image(files['textureMaskLow.dds'])
+    image(files.textureMaskLow)
     progressReport(dir, filename, "Processing textureMaskHigh.dds")
-    image(files['textureMaskHigh.dds'])
+    image(files.textureMaskHigh)
 
     int(1)
 
     progressReport(dir, filename, "Processing waterMap.dds")
-    image(files['waterMap.dds'])
+    image(files.waterMap)
 
     progressReport(dir, filename, "Processing remaining raw files")
     fileData = fileData
