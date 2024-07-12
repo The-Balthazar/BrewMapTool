@@ -121,6 +121,7 @@ end
 local formats = {
     scmap = function(filename, file)
         local data = scmapUtils.readDatastream(file:read'data')
+        if not data then return end
 
         if workingFileNames[filename] then
             print(filename, "Already under way")
