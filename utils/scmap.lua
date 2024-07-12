@@ -587,7 +587,7 @@ end
 
 function scmapUtils.exportScmapData(data, folder)
     local channel = folder
-    love.thread.getChannel(folder):push(11)
+    love.thread.getChannel(folder):push(14)
     if folder then love.filesystem.createDirectory(folder) end
     folder = (folder and folder..'/' or '')
     for k, v in pairs(data) do
@@ -605,6 +605,7 @@ function scmapUtils.exportScmapData(data, folder)
             love.filesystem.write(folder..set..'.lua', table.serialize(data[set]))
             data[set] = nil
         end
+        love.thread.getChannel(channel):push(-1)
     end
 
     love.filesystem.write(folder..'data.lua', table.serialize(data))
