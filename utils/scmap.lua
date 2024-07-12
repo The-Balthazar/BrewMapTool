@@ -124,10 +124,10 @@ function scmapUtils.readDatastream(scmapData)
             {movement = vec2(), path = stringNull()},
             {movement = vec2(), path = stringNull()},
         },
-        waveGenerators = {},
     }
+    data.waveGenerators = {}
     for i=1, int() do
-        table.insert(data.waterSettings.waveGenerators, {
+        table.insert(data.waveGenerators, {
             textureName = stringNull(),
             rampName = stringNull(),
             position = vec3(),
@@ -389,9 +389,9 @@ function scmapUtils.writeDatastream(files, filename, dir)
     end
 
     progressReport(dir, filename, "Processing wave generators")
-    local waveGenCount = #l.waveGenerators
+    local waveGenCount = #data.waveGenerators
     local waveGensString = rint(waveGenCount)
-    for i, v in ipairs(l.waveGenerators) do
+    for i, v in ipairs(data.waveGenerators) do
         local waveGen = rstringNull(v.textureName)
         ..rstringNull(v.rampName)
         ..rvec3(v.position)
@@ -599,6 +599,14 @@ function scmapUtils.exportScmapData(data, folder)
         end
     end
     love.thread.getChannel(channel):push("Writing data.lua")
+
+    for i, set in ipairs{'waveGenerators', 'decals', 'props'} do
+        if #data[set]>100 then
+            love.filesystem.write(folder..set..'.lua', table.serialize(data[set]))
+            data[set] = nil
+        end
+    end
+
     love.filesystem.write(folder..'data.lua', table.serialize(data))
     love.thread.getChannel(channel):push("Done")
     love.thread.getChannel(channel):push(-1)

@@ -9,15 +9,20 @@ local dir = channel:demand()
 local components = {
     ["data.lua"] = true,
     ["heightmap.raw"] = true,
-    ["normalMap"] = true,
-    ["previewImage"] = true,
+    normalMap = true,
+    previewImage = true,
     ["terrainType.raw"] = true,
-    ["textureMaskHigh"] = true,
-    ["textureMaskLow"] = true,
+    textureMaskHigh = true,
+    textureMaskLow = true,
     ["waterDepthBiasMask.raw"] = true,
     ["waterFlatness.raw"] = true,
     ["waterFoamMask.raw"] = true,
-    ["waterMap"] = true,
+    waterMap = true,
+}
+local optional = {
+    ["waveGenerators.lua"] = true,
+    ["props.lua"] = true,
+    ["decals.lua"] = true,
 }
 local count = 0
 for i, v in ipairs(love.filesystem.getDirectoryItems(dir)) do
@@ -30,10 +35,18 @@ for i, v in ipairs(love.filesystem.getDirectoryItems(dir)) do
         end
         count = count+1
     end
+    if optional[v] then
+        optional[v] = love.filesystem.load(dir..v)()
+    end
+end
+for k, d in pairs(optional) do
+    if type(d)=='table' then
+        components['data.lua'][k:match'^([^.]*)'] = d
+    end
 end
 if count==11 then
     local data = components['data.lua']
-    local progressTotal = #data.waterSettings.waveGenerators
+    local progressTotal = #data.waveGenerators
                         + #data.decals
                         + #data.decalGroups
                         + #data.props
