@@ -296,24 +296,28 @@ function scmapUtils.writeDatastream(files, filename, dir)
 
     progressReport(dir, filename, "starting packing")
 
-    local function float(val) fileData = fileData..hexSplit4(val) end
-    local function vec2(vec) float(vec[1]) float(vec[2]) end
-    local function vec3(vec) float(vec[1]) float(vec[2]) float(vec[3]) end
-    local function vec4(vec) float(vec[1]) float(vec[2]) float(vec[3]) float(vec[4]) end
-    local function int(val)
+    local function rfloat(val) return hexSplit4(val) end
+    local function rvec2(vec) return rfloat(vec[1])..rfloat(vec[2]) end
+    local function rvec3(vec) return rfloat(vec[1])..rfloat(vec[2])..rfloat(vec[3]) end
+    local function rvec4(vec) return rfloat(vec[1])..rfloat(vec[2])..rfloat(vec[3])..rfloat(vec[4]) end
+    local function rstringNull(str) return (str or '')..'\000' end
+    local function rint(val)
         if type(val)=='string' then
-            fileData = fileData..hexSplit4(val)
+            return hexSplit4(val)
         elseif val==-1 then
-            fileData = fileData..'\255\255\255\255'
+            return '\255\255\255\255'
         elseif type(val)=='number' then
-            fileData = fileData..hexSplitFlip4(('%0.8x'):format(val))
+            return hexSplitFlip4(('%0.8x'):format(val))
         end
     end
-    local function image(img)
-        int(img:len())
-        fileData = fileData..img
-    end
-    local function stringNull(str) fileData = fileData..(str or '')..'\000' end
+
+    local function float(val) fileData = fileData..hexSplit4(val) end
+    local function vec2(vec)  fileData = fileData..rvec2(vec) end
+    local function vec3(vec)  fileData = fileData..rvec3(vec) end
+    local function vec4(vec)  fileData = fileData..rvec4(vec) end
+    local function int(val)   fileData = fileData..rint(val) end
+    local function image(img) fileData = fileData..rint(img:len())..img end
+    local function stringNull(str) fileData = fileData..rstringNull(str) end
 
     float(data.floatWidth)
     float(data.floatHeight)
@@ -386,34 +390,36 @@ function scmapUtils.writeDatastream(files, filename, dir)
 
     progressReport(dir, filename, "Processing wave generators")
     local waveGenCount = #l.waveGenerators
-    int(waveGenCount)
+    local waveGensString = rint(waveGenCount)
     for i, v in ipairs(l.waveGenerators) do
-        stringNull(v.textureName)
-        stringNull(v.rampName)
-        vec3(v.position)
-        float(v.rotation)
-        vec3(v.velocity)
+        local waveGen = rstringNull(v.textureName)
+        ..rstringNull(v.rampName)
+        ..rvec3(v.position)
+        ..rfloat(v.rotation)
+        ..rvec3(v.velocity)
 
-        float(v.lifeTimeFirst)
-        float(v.lifeTimeSecond)
-        float(v.periodFirst)
-        float(v.periodSecond)
-        float(v.scaleFirst)
-        float(v.scaleSecond)
-        float(v.frameCount)
-        float(v.frameRateFirst)
-        float(v.frameRateSecond)
-        float(v.stripCount)
+        ..rfloat(v.lifeTimeFirst)
+        ..rfloat(v.lifeTimeSecond)
+        ..rfloat(v.periodFirst)
+        ..rfloat(v.periodSecond)
+        ..rfloat(v.scaleFirst)
+        ..rfloat(v.scaleSecond)
+        ..rfloat(v.frameCount)
+        ..rfloat(v.frameRateFirst)
+        ..rfloat(v.frameRateSecond)
+        ..rfloat(v.stripCount)
+        waveGensString = waveGensString..waveGen
         progressReport(dir, filename, "Processing wave generators", i, waveGenCount)
     end
+    fileData = fileData..waveGensString
 
     progressReport(dir, filename, "Processing minimap data")
-    int(data.miniMapContourInterval)
-    fileData = fileData..hexSplit4(data.miniMapDeepWaterColor)
-    fileData = fileData..hexSplit4(data.miniMapContourColor)
-    fileData = fileData..hexSplit4(data.miniMapShoreColor)
-    fileData = fileData..hexSplit4(data.miniMapLandStartColor)
-    fileData = fileData..hexSplit4(data.miniMapLandEndColor)
+    fileData = fileData..rint(data.miniMapContourInterval)
+    ..hexSplit4(data.miniMapDeepWaterColor)
+    ..hexSplit4(data.miniMapContourColor)
+    ..hexSplit4(data.miniMapShoreColor)
+    ..hexSplit4(data.miniMapLandStartColor)
+    ..hexSplit4(data.miniMapLandEndColor)
 
     if data.version>56 then
         fileData = fileData..hexSplit4(data.unknownFA)
@@ -431,23 +437,24 @@ function scmapUtils.writeDatastream(files, filename, dir)
 
     progressReport(dir, filename, "Processing decals")
     local decalCount = #data.decals
-    int(decalCount)
+    local decalsString = rint(decalCount)
     for i, decal in ipairs(data.decals) do
-        int(decal.id)
-        int(decal.type)
-        int(#decal.textures)
+        local decalStr  = rint(decal.id)
+        ..rint(decal.type)
+        ..rint(#decal.textures)
         for i, path in ipairs(decal.textures) do
-            int(#path)
-            fileData = fileData..path
+            decalStr = decalStr..rint(#path)..path
         end
-        vec3(decal.scale)
-        vec3(decal.position)
-        vec3(decal.rotation)
-        float(decal.LODCutoff)
-        float(decal.LODCutoffMin)
-        int(decal.army)
+        decalStr = decalStr..rvec3(decal.scale)
+        ..rvec3(decal.position)
+        ..rvec3(decal.rotation)
+        ..rfloat(decal.LODCutoff)
+        ..rfloat(decal.LODCutoffMin)
+        ..rint(decal.army)
+        decalsString = decalsString..decalStr
         progressReport(dir, filename, "Processing decals", i, decalCount)
     end
+    fileData = fileData..decalsString
 
     progressReport(dir, filename, "Processing decal groups")
     local decalGroupCount = #data.decalGroups
@@ -465,18 +472,21 @@ function scmapUtils.writeDatastream(files, filename, dir)
     int(data.intWidth)
     int(data.intHeight)
 
-    int(1)
+    local nlayers = 1
+    int(nlayers)
 
-    progressReport(dir, filename, "Processing normalMap.dds")
-    image(files.normalMap)
-    progressReport(dir, filename, "Processing textureMaskLow.dds")
+    progressReport(dir, filename, "Processing normalMap")
+    for i=1, nlayers do
+        image(files.normalMap)
+    end
+    progressReport(dir, filename, "Processing textureMaskLow")
     image(files.textureMaskLow)
-    progressReport(dir, filename, "Processing textureMaskHigh.dds")
+    progressReport(dir, filename, "Processing textureMaskHigh")
     image(files.textureMaskHigh)
 
     int(1)
 
-    progressReport(dir, filename, "Processing waterMap.dds")
+    progressReport(dir, filename, "Processing waterMap")
     image(files.waterMap)
 
     progressReport(dir, filename, "Processing remaining raw files")
@@ -531,16 +541,18 @@ function scmapUtils.writeDatastream(files, filename, dir)
 
     progressReport(dir, filename, "Processing props")
     local propCount = #data.props
-    int(propCount)
+    local propsString = rint(propCount)
     for i, prop in ipairs(data.props) do
-        stringNull(prop.path)
-        vec3(prop.position)
-        vec3(prop.rotationX)
-        vec3(prop.rotationY)
-        vec3(prop.rotationZ)
-        vec3(prop.scale)
+        local propString = rstringNull(prop.path)
+        ..rvec3(prop.position)
+        ..rvec3(prop.rotationX)
+        ..rvec3(prop.rotationY)
+        ..rvec3(prop.rotationZ)
+        ..rvec3(prop.scale)
+        propsString = propsString..propString
         progressReport(dir, filename, "Processing props", i, propCount)
     end
+    fileData = fileData..propsString
     progressReport(dir, filename, "Writing file")
     love.filesystem.createDirectory('packed')
     local done, msg = love.filesystem.write('packed/'..filename, fileData)
