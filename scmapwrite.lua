@@ -46,6 +46,7 @@ for k, d in pairs(optional) do
 end
 if count==11 then
     local data = components['data.lua']
+    data.waveGenerators = data.waveGenerators or data.waveGenerators.waterSettings--NOTE: Legacy
     local progressTotal = #data.waveGenerators
                         + #data.decals
                         + #data.decalGroups
