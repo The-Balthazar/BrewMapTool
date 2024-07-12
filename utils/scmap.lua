@@ -484,7 +484,7 @@ function scmapUtils.writeDatastream(files, filename, dir)
     progressReport(dir, filename, "Processing textureMaskHigh")
     image(files.textureMaskHigh)
 
-    int(1)
+    int(1)--0 and 255 return you to the main menu, 2 loads you in with a black screen where you can give orders, 3 crashes
 
     progressReport(dir, filename, "Processing waterMap")
     image(files.waterMap)
