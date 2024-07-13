@@ -2,6 +2,7 @@ require'utils.maths'
 require'utils.table'
 require'utils.scmap'
 require'love.system'
+require'utils.fileformats'
 
 local channel = love.thread.getChannel'scmapwrite'
 local dir = channel:demand()
@@ -71,10 +72,33 @@ local arbitrary = love.filesystem.getDirectoryItems(dir..'arbitrary/')
 if arbitrary and arbitrary[1] then
     table.sort(arbitrary)
     local arbitraryFiles = {}
+
+    local index = table.find(arbitrary, 'index.lua')
+    local newIndex = {}
+    if index and table.remove(arbitrary, index) then
+        index = love.filesystem.load(dir..'arbitrary/index.lua')()
+        if index and index[1] then
+            for i, filename in ipairs(index) do
+                local found = table.find(arbitrary, filename)
+                if found and table.remove(arbitrary, found) then
+                    local file = love.filesystem.read(dir..'arbitrary/'..filename)
+                    table.insert(arbitraryFiles, file )
+                    table.insert(newIndex, filename)
+                else
+                    print(filename, "from index not found in arbitrary file directory. Excluding from index.")
+                end
+            end
+        end
+    else
+        print("No index found in arbitrary file directory. Generating one.")
+    end
     for i, filename in ipairs(arbitrary) do
         local file = love.filesystem.read(dir..'arbitrary/'..filename)
         table.insert(arbitraryFiles, file)
+        table.insert(newIndex, filename)
+        print("Appending", filename, "to index.")
     end
+    table.insert(arbitraryFiles, 1, fileformats.indexLuaToBin(newIndex))
     components.arbitrary = arbitraryFiles
 end
 

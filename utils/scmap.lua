@@ -209,9 +209,16 @@ function scmapUtils.readDatastream(scmapData)
     if arbitraryFiles==1 and peekBytes(9):sub(-5)=='DDS |' then
         data.normalMap = intFile()
     elseif arbitraryFiles>0 then
+        local index
         data.arbitrary = {}
+        if peekBytes(9):sub(-5)=='INDEX' then
+            index = fileformats.indexBinToLua(readBytes(int()))
+            table.insert(data.arbitrary, {table.serialize(index), __filename = 'index.lua'})
+            arbitraryFiles = arbitraryFiles-1
+        end
         for i=1, arbitraryFiles do
             local file = intFile()
+            file.__filename = index and index[i] or nil
             table.insert(data.arbitrary, file)
         end
     end

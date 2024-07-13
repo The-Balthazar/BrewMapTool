@@ -1,6 +1,7 @@
 require'utils.maths'
 require'utils.table'
 require'utils.scmap'
+require'utils.fileformats'
 
 local drawcanvas
 function love.load()
