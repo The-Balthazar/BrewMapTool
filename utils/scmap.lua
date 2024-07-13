@@ -320,7 +320,7 @@ function scmapUtils.writeDatastream(files, filename, dir)
     local function vec3(vec)  fileData = fileData..rvec3(vec) end
     local function vec4(vec)  fileData = fileData..rvec4(vec) end
     local function int(val)   fileData = fileData..rint(val) end
-    local function image(img) fileData = fileData..rint(img:len())..img end
+    local function intFile(file) fileData = fileData..rint(file:len())..file end
     local function stringNull(str) fileData = fileData..rstringNull(str) end
 
     float(data.floatWidth)
@@ -328,7 +328,7 @@ function scmapUtils.writeDatastream(files, filename, dir)
 
     fileData = fileData..'\000\000\000\000\000\000'
 
-    image(files.previewImage)
+    intFile(files.previewImage)
 
     int(data.version)
 
@@ -479,12 +479,12 @@ function scmapUtils.writeDatastream(files, filename, dir)
     if files.normalMap then
         progressReport(dir, filename, "Processing normalMap")
         int(1)
-        image(files.normalMap)
+        intFile(files.normalMap)
     elseif files.arbitrary then
         progressReport(dir, filename, "Processing arbitrary files")
         int(#files.arbitrary)
         for i, data in ipairs(files.arbitrary) do
-            image(data)
+            intFile(data)
         end
     else
         progressReport(dir, filename, "Doing nothing")
@@ -492,14 +492,14 @@ function scmapUtils.writeDatastream(files, filename, dir)
     end
 
     progressReport(dir, filename, "Processing textureMaskLow")
-    image(files.textureMaskLow)
+    intFile(files.textureMaskLow)
     progressReport(dir, filename, "Processing textureMaskHigh")
-    image(files.textureMaskHigh)
+    intFile(files.textureMaskHigh)
 
     int(1)--0 and 255 return you to the main menu, 2 loads you in with a black screen where you can give orders, 3 crashes
 
     progressReport(dir, filename, "Processing waterMap")
-    image(files.waterMap)
+    intFile(files.waterMap)
 
     progressReport(dir, filename, "Processing remaining raw files")
     fileData = fileData
