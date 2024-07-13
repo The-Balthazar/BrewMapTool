@@ -290,15 +290,7 @@ local function rvec2(vec) return rfloat(vec[1])..rfloat(vec[2]) end
 local function rvec3(vec) return rfloat(vec[1])..rfloat(vec[2])..rfloat(vec[3]) end
 local function rvec4(vec) return rfloat(vec[1])..rfloat(vec[2])..rfloat(vec[3])..rfloat(vec[4]) end
 local function rstringNull(str) return (str or '')..'\000' end
-local function rint(val)
-    if type(val)=='string' then
-        return hexSplit4(val)
-    elseif val==-1 then
-        return '\255\255\255\255'
-    elseif type(val)=='number' then
-        return hexSplitFlip4(('%0.8x'):format(val))
-    end
-end
+local function rint(val) return math.intToIBM(val) end
 
 local function progressReport(dir, filename, message, i, t)
     love.thread.getChannel(dir):push(-1)
