@@ -281,6 +281,21 @@ local function hex2bin4(a,b,c,d) return hex2bin(a)..hex2bin(b)..hex2bin(c)..hex2
 local function hexSplit4(val) return hex2bin4(val:sub(-8,-7),val:sub(-6,-5),val:sub(-4,-3),val:sub(-2,-1)) end
 local function hexSplitFlip4(val) return hex2bin4(val:sub(-2,-1),val:sub(-4,-3),val:sub(-6,-5),val:sub(-8,-7)) end
 
+local function rfloat(val) return hexSplit4(val) end
+local function rvec2(vec) return rfloat(vec[1])..rfloat(vec[2]) end
+local function rvec3(vec) return rfloat(vec[1])..rfloat(vec[2])..rfloat(vec[3]) end
+local function rvec4(vec) return rfloat(vec[1])..rfloat(vec[2])..rfloat(vec[3])..rfloat(vec[4]) end
+local function rstringNull(str) return (str or '')..'\000' end
+local function rint(val)
+    if type(val)=='string' then
+        return hexSplit4(val)
+    elseif val==-1 then
+        return '\255\255\255\255'
+    elseif type(val)=='number' then
+        return hexSplitFlip4(('%0.8x'):format(val))
+    end
+end
+
 local function progressReport(dir, filename, message, i, t)
     love.thread.getChannel(dir):push(-1)
     if not i then
@@ -295,21 +310,6 @@ function scmapUtils.writeDatastream(files, filename, dir)
     local data = files['data.lua']
 
     progressReport(dir, filename, "starting packing")
-
-    local function rfloat(val) return hexSplit4(val) end
-    local function rvec2(vec) return rfloat(vec[1])..rfloat(vec[2]) end
-    local function rvec3(vec) return rfloat(vec[1])..rfloat(vec[2])..rfloat(vec[3]) end
-    local function rvec4(vec) return rfloat(vec[1])..rfloat(vec[2])..rfloat(vec[3])..rfloat(vec[4]) end
-    local function rstringNull(str) return (str or '')..'\000' end
-    local function rint(val)
-        if type(val)=='string' then
-            return hexSplit4(val)
-        elseif val==-1 then
-            return '\255\255\255\255'
-        elseif type(val)=='number' then
-            return hexSplitFlip4(('%0.8x'):format(val))
-        end
-    end
 
     local function float(val) fileData = fileData..hexSplit4(val) end
     local function vec2(vec)  fileData = fileData..rvec2(vec) end
