@@ -34,6 +34,11 @@ function scmapUtils.readDatastream(scmapData)
         fileOffset = fileOffset+n
         return scmapData:getString(fileOffset-n, n)
     end
+    local function peekBytes(n)
+        assert(n>=0, 'Error: scmap peek out of sync: peekBytes fed a negative byte count')
+        if n==0 then return end
+        return scmapData:getString(fileOffset, n)
+    end
 
     local function readBin(n, format)
         return {readBytes(n), __format = format}
