@@ -166,6 +166,7 @@ function love.filedropped(file)
     if handler then
         if not file:open'r' then return print(filename, "failed to load") end
         handler(filename, file)
+        file:close()
     else
         print("Unknown file format: ", format)
     end
