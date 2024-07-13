@@ -59,7 +59,7 @@ function scmapUtils.readDatastream(scmapData)
         end
         return str
     end
-    local function image()
+    local function intFile()
         local image = readBytes(int())
         return {image, __format = getFormat(image)}
     end
@@ -69,7 +69,7 @@ function scmapUtils.readDatastream(scmapData)
 
     if readBytes(6)~='\000\000\000\000\000\000' then return print"Unrecognised map file format: missing padding" end
 
-    data.previewImage = image()
+    data.previewImage = intFile()
 
     data.version = int()
     if data.version~=56 and data.version~=60 then return print("Unexpected scmap type version number", data.version) end
@@ -205,15 +205,23 @@ function scmapUtils.readDatastream(scmapData)
     data.intWidth = int()
     data.intHeight = int()
 
-    if int()~=1 then return print"Unrecognised map file format" end
+    local arbitraryFiles = int()
+    if arbitraryFiles==1 and peekBytes(9):sub(-5)=='DDS |' then
+        data.normalMap = intFile()
+    elseif arbitraryFiles>0 then
+        data.arbitrary = {}
+        for i=1, arbitraryFiles do
+            local file = intFile()
+            table.insert(data.arbitrary, file)
+        end
+    end
 
-    data.normalMap = image()
-    data.textureMaskLow = image()
-    data.textureMaskHigh = image()
+    data.textureMaskLow = intFile()
+    data.textureMaskHigh = intFile()
 
     if int()~=1 then return print"Unrecognised map file format: int? that should always be 1 isn't 1" end
 
-    data.waterMap = image()
+    data.waterMap = intFile()
     local halfSize = data.size[1]/2*data.size[2]/2
     data.waterFoamMask = readBin(halfSize, 'raw')
     data.waterFlatness = readBin(halfSize, 'raw')
@@ -468,13 +476,21 @@ function scmapUtils.writeDatastream(files, filename, dir)
     int(data.intWidth)
     int(data.intHeight)
 
-    local nlayers = 1
-    int(nlayers)
-
-    progressReport(dir, filename, "Processing normalMap")
-    for i=1, nlayers do
+    if files.normalMap then
+        progressReport(dir, filename, "Processing normalMap")
+        int(1)
         image(files.normalMap)
+    elseif files.arbitrary then
+        progressReport(dir, filename, "Processing arbitrary files")
+        int(#files.arbitrary)
+        for i, data in ipairs(files.arbitrary) do
+            image(data)
+        end
+    else
+        progressReport(dir, filename, "Doing nothing")
+        int(0)
     end
+
     progressReport(dir, filename, "Processing textureMaskLow")
     image(files.textureMaskLow)
     progressReport(dir, filename, "Processing textureMaskHigh")
@@ -583,7 +599,7 @@ end
 
 function scmapUtils.exportScmapData(data, folder)
     local channel = folder
-    love.thread.getChannel(folder):push(14)
+    love.thread.getChannel(folder):push(13 + (data.normapMap and 1 or 0) + (data.arbitrary and #data.arbitrary or 0))
     if folder then love.filesystem.createDirectory(folder) end
     folder = (folder and folder..'/' or '')
     for k, v in pairs(data) do
@@ -593,6 +609,16 @@ function scmapUtils.exportScmapData(data, folder)
             data[k] = nil
             love.thread.getChannel(channel):push(-1)
         end
+    end
+    if data.arbitrary then
+        love.filesystem.createDirectory(folder..'arbitrary')
+        for i, file in ipairs(data.arbitrary) do
+            local filename = (v.__filename or 'arbitrary'..i..'.'..v.__format)
+            love.thread.getChannel(channel):push("Writing "..filename)
+            love.filesystem.write(folder..'arbitrary/'..filename, v[1])
+            love.thread.getChannel(channel):push(-1)
+        end
+        data.arbitrary = nil
     end
     love.thread.getChannel(channel):push("Writing data.lua")
 
