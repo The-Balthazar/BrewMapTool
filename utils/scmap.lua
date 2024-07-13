@@ -63,7 +63,7 @@ function scmapUtils.readDatastream(scmapData)
     data.floatWidth = float()
     data.floatHeight = float()
 
-    if readBytes(6)~='\000\000\000\000\000\000' then return print"Unrecognised map file format" end
+    if readBytes(6)~='\000\000\000\000\000\000' then return print"Unrecognised map file format: missing padding" end
 
     data.previewImage = image()
 
@@ -73,7 +73,7 @@ function scmapUtils.readDatastream(scmapData)
     data.size = {int(),int()}
     data.heightmapScale = float()
     data.heightmap = readBin((data.size[1]+1)*(data.size[2]+1)*2, 'raw')
-    if readBytes(1)~='\000' then return print"Unrecognised map file format" end
+    if readBytes(1)~='\000' then return print"Unrecognised map file format: no null terminator after heightmap" end
 
     data.shaderPath = stringNull()
     data.backgroundPath = stringNull()
@@ -207,7 +207,7 @@ function scmapUtils.readDatastream(scmapData)
     data.textureMaskLow = image()
     data.textureMaskHigh = image()
 
-    if int()~=1 then return print"Unrecognised map file format" end
+    if int()~=1 then return print"Unrecognised map file format: int? that should always be 1 isn't 1" end
 
     data.waterMap = image()
     local halfSize = data.size[1]/2*data.size[2]/2
