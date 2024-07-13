@@ -271,15 +271,22 @@ function scmapUtils.readDatastream(scmapData)
     end
 
     data.props = {}
-    for i=1, int() do
-        table.insert(data.props, {
-            path = stringNull(),
-            position = vec3(),
-            rotationX = vec3(),
-            rotationY = vec3(),
-            rotationZ = vec3(),
-            scale = vec3(),
-        })
+    if math.IMBInt(peekBytes(4))>2900 then -- ~65k/[num values per prop, including tables]
+        print("Warning: Prop count might exceed what could be read back in as a Lua table. Writing as binary blob instead.")
+        data.props[1] = scmapData:getString(fileOffset)
+        fileOffset = scmapData:getSize()
+        data.props.__format = 'raw'
+    else
+        for i=1, int() do
+            table.insert(data.props, {
+                path = stringNull(),
+                position = vec3(),
+                rotationX = vec3(),
+                rotationY = vec3(),
+                rotationZ = vec3(),
+                scale = vec3(),
+            })
+        end
     end
 
     print("Parsed", fileOffset, "of", scmapData:getSize(), "total bytes")
@@ -552,19 +559,26 @@ function scmapUtils.writeDatastream(files, filename, dir)
     end
 
     progressReport(dir, filename, "Processing props")
-    local propCount = #data.props
-    local propsString = rint(propCount)
-    for i, prop in ipairs(data.props) do
-        local propString = rstringNull(prop.path)
-        ..rvec3(prop.position)
-        ..rvec3(prop.rotationX)
-        ..rvec3(prop.rotationY)
-        ..rvec3(prop.rotationZ)
-        ..rvec3(prop.scale)
-        propsString = propsString..propString
-        progressReport(dir, filename, "Processing props", i, propCount)
+    if type(data.props)=='table' then
+        local propCount = #data.props
+        local propStrings = {rint(propCount)}
+        for i, prop in ipairs(data.props) do
+            table.insert(propStrings,
+                rstringNull(prop.path)
+                ..rvec3(prop.position)
+                ..rvec3(prop.rotationX)
+                ..rvec3(prop.rotationY)
+                ..rvec3(prop.rotationZ)
+                ..rvec3(prop.scale)
+            )
+            progressReport(dir, filename, "Processing props", i, propCount)
+        end
+        fileData = fileData..table.concat(propStrings)
+    elseif type(data.props)=='string' then
+        fileData = fileData..data.props
+    else
+        int(0)
     end
-    fileData = fileData..propsString
     progressReport(dir, filename, "Writing file")
     love.filesystem.createDirectory('packed')
     local done, msg = love.filesystem.write('packed/'..filename, fileData)
@@ -623,11 +637,11 @@ function scmapUtils.exportScmapData(data, folder)
     love.thread.getChannel(channel):push("Writing data.lua")
 
     for i, set in ipairs{'waveGenerators', 'decals', 'props'} do
-        if #data[set]>100 then
+        if data[set] and #data[set]>100 then
             love.filesystem.write(folder..set..'.lua', table.serialize(data[set]))
             data[set] = nil
+            love.thread.getChannel(channel):push(-1)
         end
-        love.thread.getChannel(channel):push(-1)
     end
 
     love.filesystem.write(folder..'data.lua', table.serialize(data))
