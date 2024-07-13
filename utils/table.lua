@@ -28,18 +28,18 @@ local reserved = {
 function table.serialize(val, key, depth)
     depth = depth or 0
 
-    local str = string.rep('    ', depth)
+    local buffer = {string.rep('    ', depth)}
     if type(key) ~= 'number' then
-        str = str..(key and key..' = ' or 'return ')
+        table.insert(buffer, (key and key..' = ' or 'return '))
     end
 
     local valtype = type(val)
     if valtype == 'table' then
         if next(val) then
-            str = str .. "{\n"
+            table.insert(buffer, "{\n")
             if table.len(val) == #val and table.maxi(val) == #val then
                 for i, v in ipairs(val) do
-                    str =  str .. table.serialize(v, i, depth + 1) .. ",\n"
+                    table.insert(buffer, table.serialize(v, i, depth + 1) .. ",\n")
                 end
             else
                 for k, v in sortedpairs(val) do
@@ -48,26 +48,26 @@ function table.serialize(val, key, depth)
                     elseif k:find'^%A' or k:find'[^%w_]' or reserved[k] then
                         k = string.format("[%q]", tostring(k) )
                     end
-                    str = str .. table.serialize(v, k, depth + 1) .. ",\n"
+                    table.insert(buffer, table.serialize(v, k, depth + 1) .. ",\n")
                 end
             end
-            str = str .. string.rep('    ', depth) .. '}'
+            table.insert(buffer, string.rep('    ', depth) .. '}')
 
         else
-            str = str .. '{}'
+            table.insert(buffer, '{}')
         end
 
     elseif valtype == 'number' or valtype == 'boolean' then
-        str = str .. tostring(val)
+        table.insert(buffer, tostring(val))
 
     elseif valtype == 'string' then
-        str = str .. string.format("%q", val)
+        table.insert(buffer, string.format("%q", val))
 
     else
-        str = str .. string.format("%q", tostring(val))
+        table.insert(buffer, string.format("%q", tostring(val)))
     end
 
-    return str
+    return table.concat(buffer)
 end
 
 function table.len(a)
