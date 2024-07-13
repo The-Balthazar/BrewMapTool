@@ -317,23 +317,23 @@ local function progressReport(dir, filename, message, i, t)
 end
 
 function scmapUtils.writeDatastream(files, filename, dir)
-    local fileData = scmapDef.header[1]..scmapDef.header[2]..scmapDef.header[3]..scmapDef.header[2]
+    local fileData = {scmapDef.header[1],scmapDef.header[2],scmapDef.header[3],scmapDef.header[2]}
     local data = files['data.lua']
 
     progressReport(dir, filename, "starting packing")
 
-    local function float(val) fileData = fileData..hexSplit4(val) end
-    local function vec2(vec)  fileData = fileData..rvec2(vec) end
-    local function vec3(vec)  fileData = fileData..rvec3(vec) end
-    local function vec4(vec)  fileData = fileData..rvec4(vec) end
-    local function int(val)   fileData = fileData..rint(val) end
-    local function intFile(file) fileData = fileData..rint(file:len())..file end
-    local function stringNull(str) fileData = fileData..rstringNull(str) end
+    local function float(val) table.insert(fileData, hexSplit4(val)) end
+    local function vec2(vec)  table.insert(fileData, rvec2(vec)) end
+    local function vec3(vec)  table.insert(fileData, rvec3(vec)) end
+    local function vec4(vec)  table.insert(fileData, rvec4(vec)) end
+    local function int(val)   table.insert(fileData, rint(val)) end
+    local function intFile(file) table.insert(fileData, rint(file:len())..file) end
+    local function stringNull(str) table.insert(fileData, rstringNull(str)) end
 
     float(data.floatWidth)
     float(data.floatHeight)
 
-    fileData = fileData..'\000\000\000\000\000\000'
+    table.insert(fileData, '\000\000\000\000\000\000')
 
     intFile(files.previewImage)
 
@@ -345,7 +345,8 @@ function scmapUtils.writeDatastream(files, filename, dir)
     local expectedHeightmapSize = (data.size[1]+1)*(data.size[2]+1)*2
     if #files['heightmap.raw']~=expectedHeightmapSize then print("Warning: Heightmap", #files['heightmap.raw'], "bytes. expected: ", expectedHeightmapSize, "bytes") end
     progressReport(dir, filename, "Processing heightmap.raw")
-    fileData = fileData..files['heightmap.raw']..'\000'
+    table.insert(fileData, files['heightmap.raw'])
+    table.insert(fileData, '\000')
 
     stringNull(data.shaderPath)
     stringNull(data.backgroundPath)
@@ -373,7 +374,7 @@ function scmapUtils.writeDatastream(files, filename, dir)
 
     progressReport(dir, filename, "Processing water settings")
     l = data.waterSettings
-    fileData = fileData..string.char(l.waterPresent and 1 or 0)
+    table.insert(fileData, string.char(l.waterPresent and 1 or 0))
     float(l.elevation)
     float(l.elevationDeep)
     float(l.elevationAbyss)
@@ -401,39 +402,42 @@ function scmapUtils.writeDatastream(files, filename, dir)
 
     progressReport(dir, filename, "Processing wave generators")
     local waveGenCount = #data.waveGenerators
-    local waveGensString = rint(waveGenCount)
+    local waveGenStrings = {rint(waveGenCount)}
     for i, v in ipairs(data.waveGenerators) do
-        local waveGen = rstringNull(v.textureName)
-        ..rstringNull(v.rampName)
-        ..rvec3(v.position)
-        ..rfloat(v.rotation)
-        ..rvec3(v.velocity)
-
-        ..rfloat(v.lifeTimeFirst)
-        ..rfloat(v.lifeTimeSecond)
-        ..rfloat(v.periodFirst)
-        ..rfloat(v.periodSecond)
-        ..rfloat(v.scaleFirst)
-        ..rfloat(v.scaleSecond)
-        ..rfloat(v.frameCount)
-        ..rfloat(v.frameRateFirst)
-        ..rfloat(v.frameRateSecond)
-        ..rfloat(v.stripCount)
-        waveGensString = waveGensString..waveGen
         progressReport(dir, filename, "Processing wave generators", i, waveGenCount)
+        table.insert(waveGenStrings, table.concat{
+            rstringNull(v.textureName),
+            rstringNull(v.rampName),
+            rvec3(v.position),
+            rfloat(v.rotation),
+            rvec3(v.velocity),
+
+            rfloat(v.lifeTimeFirst),
+            rfloat(v.lifeTimeSecond),
+            rfloat(v.periodFirst),
+            rfloat(v.periodSecond),
+            rfloat(v.scaleFirst),
+            rfloat(v.scaleSecond),
+            rfloat(v.frameCount),
+            rfloat(v.frameRateFirst),
+            rfloat(v.frameRateSecond),
+            rfloat(v.stripCount),
+        })
     end
-    fileData = fileData..waveGensString
+    table.insert(fileData, table.concat(waveGenStrings))
 
     progressReport(dir, filename, "Processing minimap data")
-    fileData = fileData..rint(data.miniMapContourInterval)
-    ..hexSplit4(data.miniMapDeepWaterColor)
-    ..hexSplit4(data.miniMapContourColor)
-    ..hexSplit4(data.miniMapShoreColor)
-    ..hexSplit4(data.miniMapLandStartColor)
-    ..hexSplit4(data.miniMapLandEndColor)
+    table.insert(fileData, table.concat{
+        rint(data.miniMapContourInterval),
+        hexSplit4(data.miniMapDeepWaterColor),
+        hexSplit4(data.miniMapContourColor),
+        hexSplit4(data.miniMapShoreColor),
+        hexSplit4(data.miniMapLandStartColor),
+        hexSplit4(data.miniMapLandEndColor),
+    })
 
     if data.version>56 then
-        fileData = fileData..hexSplit4(data.unknownFA)
+        table.insert(fileData, hexSplit4(data.unknownFA))
     end
 
     if #data.textures~=10 then print"Warning: textures an unexpected array length: expected 10" end
@@ -443,41 +447,46 @@ function scmapUtils.writeDatastream(files, filename, dir)
     progressReport(dir, filename, "Processing normal paths")
     for i, v in ipairs(data.normals) do stringNull(v.path) float(v.scale) end
 
-    fileData = fileData..hexSplit4(data.unknown1)
-    fileData = fileData..hexSplit4(data.unknown2)
+    table.insert(fileData, hexSplit4(data.unknown1))
+    table.insert(fileData, hexSplit4(data.unknown2))
 
     progressReport(dir, filename, "Processing decals")
     local decalCount = #data.decals
-    local decalsString = rint(decalCount)
+    local decalsStrings = {rint(decalCount)}
     for i, decal in ipairs(data.decals) do
-        local decalStr  = rint(decal.id)
-        ..rint(decal.type)
-        ..rint(#decal.textures)
-        for i, path in ipairs(decal.textures) do
-            decalStr = decalStr..rint(#path)..path
-        end
-        decalStr = decalStr..rvec3(decal.scale)
-        ..rvec3(decal.position)
-        ..rvec3(decal.rotation)
-        ..rfloat(decal.LODCutoff)
-        ..rfloat(decal.LODCutoffMin)
-        ..rint(decal.army)
-        decalsString = decalsString..decalStr
         progressReport(dir, filename, "Processing decals", i, decalCount)
+        local decalBuffer = {
+            rint(decal.id),
+            rint(decal.type),
+            rint(#decal.textures),
+        }
+        for i, path in ipairs(decal.textures) do
+            table.insert(decalBuffer, rint(#path))
+            table.insert(decalBuffer, path)
+        end
+        table.insert(decalsStrings, table.concat(decalBuffer))
+        table.insert(decalsStrings, table.concat{
+            rvec3(decal.scale),
+            rvec3(decal.position),
+            rvec3(decal.rotation),
+            rfloat(decal.LODCutoff),
+            rfloat(decal.LODCutoffMin),
+            rint(decal.army),
+        })
     end
-    fileData = fileData..decalsString
+    table.insert(fileData, table.concat(decalsStrings))
 
     progressReport(dir, filename, "Processing decal groups")
     local decalGroupCount = #data.decalGroups
     int(decalGroupCount)
     for i, group in ipairs(data.decalGroups) do
+        progressReport(dir, filename, "Processing decal groups", i, decalGroupCount)
         int(group.id)
         stringNull(group.name)
         int(#group.data)
         for i, v in ipairs(group.data) do
             int(v)
         end
-        progressReport(dir, filename, "Processing decal groups", i, decalGroupCount)
     end
 
     int(data.intWidth)
@@ -509,11 +518,10 @@ function scmapUtils.writeDatastream(files, filename, dir)
     intFile(files.waterMap)
 
     progressReport(dir, filename, "Processing remaining raw files")
-    fileData = fileData
-        ..files['waterFoamMask.raw']
-        ..files['waterFlatness.raw']
-        ..files['waterDepthBiasMask.raw']
-        ..files['terrainType.raw']
+    table.insert(fileData, files['waterFoamMask.raw'])
+    table.insert(fileData, files['waterFlatness.raw'])
+    table.insert(fileData, files['waterDepthBiasMask.raw'])
+    table.insert(fileData, files['terrainType.raw'])
 
     progressReport(dir, filename, "Processing skyBox")
     if data.version>=60 then
@@ -539,10 +547,9 @@ function scmapUtils.writeDatastream(files, filename, dir)
             vec2(planet.scale)
             vec4(planet.uv)
         end
-        fileData = fileData
-            ..string.char(l.midColor[1])
-            ..string.char(l.midColor[2])
-            ..string.char(l.midColor[3])
+        table.insert(fileData, string.char(l.midColor[1]))
+        table.insert(fileData, string.char(l.midColor[2]))
+        table.insert(fileData, string.char(l.midColor[3]))
 
         float(l.cirrusMultiplier)
         vec3(l.cirrusColor)
@@ -563,25 +570,25 @@ function scmapUtils.writeDatastream(files, filename, dir)
         local propCount = #data.props
         local propStrings = {rint(propCount)}
         for i, prop in ipairs(data.props) do
-            table.insert(propStrings,
-                rstringNull(prop.path)
-                ..rvec3(prop.position)
-                ..rvec3(prop.rotationX)
-                ..rvec3(prop.rotationY)
-                ..rvec3(prop.rotationZ)
-                ..rvec3(prop.scale)
-            )
             progressReport(dir, filename, "Processing props", i, propCount)
+            table.insert(propStrings, table.concat{
+                rstringNull(prop.path),
+                rvec3(prop.position),
+                rvec3(prop.rotationX),
+                rvec3(prop.rotationY),
+                rvec3(prop.rotationZ),
+                rvec3(prop.scale),
+            })
         end
-        fileData = fileData..table.concat(propStrings)
+        table.insert(fileData, table.concat(propStrings))
     elseif type(data.props)=='string' then
-        fileData = fileData..data.props
+        table.insert(fileData, data.props)
     else
         int(0)
     end
     progressReport(dir, filename, "Writing file")
     love.filesystem.createDirectory('packed')
-    local done, msg = love.filesystem.write('packed/'..filename, fileData)
+    local done, msg = love.filesystem.write('packed/'..filename, table.concat(fileData))
     progressReport(dir, filename, done and "Write complete" or msg)
     love.system.openURL(love.filesystem.getSaveDirectory()..'/packed')
 end
