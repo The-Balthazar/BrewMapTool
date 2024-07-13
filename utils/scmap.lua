@@ -60,8 +60,7 @@ function scmapUtils.readDatastream(scmapData)
         return str
     end
     local function image()
-        local bytes = int()
-        local image = readBytes(bytes)
+        local image = readBytes(int())
         return {image, __format = getFormat(image)}
     end
 
