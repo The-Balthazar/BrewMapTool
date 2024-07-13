@@ -88,6 +88,14 @@ function table.maxi(a)
     return n
 end
 
+function table.find(a,f)
+    for i, v in ipairs(a) do
+        if v==f then
+            return i
+        end
+    end
+end
+
 -- pairs, but sorted
 function sortedpairs(set, sort)
     local keys = {}
