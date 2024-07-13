@@ -72,7 +72,8 @@ if arbitrary and arbitrary[1] then
     table.sort(arbitrary)
     local arbitraryFiles = {}
     for i, filename in ipairs(arbitrary) do
-        table.insert(arbitraryFiles, love.filesystem.read(dir..'arbitrary/'..filename))
+        local file = love.filesystem.read(dir..'arbitrary/'..filename)
+        table.insert(arbitraryFiles, file)
     end
 end
 
