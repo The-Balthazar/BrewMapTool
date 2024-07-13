@@ -75,6 +75,7 @@ if arbitrary and arbitrary[1] then
         local file = love.filesystem.read(dir..'arbitrary/'..filename)
         table.insert(arbitraryFiles, file)
     end
+    components.arbitrary = arbitraryFiles
 end
 
 local data = components['data.lua']
