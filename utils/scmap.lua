@@ -634,9 +634,9 @@ function scmapUtils.exportScmapData(data, folder)
     if data.arbitrary then
         love.filesystem.createDirectory(folder..'arbitrary')
         for i, file in ipairs(data.arbitrary) do
-            local filename = (v.__filename or 'arbitrary'..i..'.'..v.__format)
+            local filename = (file.__filename or 'arbitrary'..i..'.'..file.__format)
             love.thread.getChannel(channel):push("Writing "..filename)
-            love.filesystem.write(folder..'arbitrary/'..filename, v[1])
+            love.filesystem.write(folder..'arbitrary/'..filename, file[1])
             love.thread.getChannel(channel):push(-1)
         end
         data.arbitrary = nil
