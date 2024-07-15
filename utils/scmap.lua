@@ -519,10 +519,15 @@ function scmapUtils.writeDatastream(files, filename, dir)
     progressReport(dir, filename, "Processing textureMaskHigh")
     intFile(files.textureMaskHigh)
 
-    int(1)--0 and 255 return you to the main menu, 2 loads you in with a black screen where you can give orders, 3 crashes
-
-    progressReport(dir, filename, "Processing waterMap")
-    intFile(files.waterMap)
+    if files.waterMap then
+        progressReport(dir, filename, "Processing waterMap")
+        int(1)--Image array count
+        intFile(files.waterMap)
+    else
+        progressReport(dir, filename, "Doing nothing")
+        int(0)
+        print("Warning map wont render correctly if the first file in this array isn't a dds image.")
+    end
 
     progressReport(dir, filename, "Processing remaining raw files")
     table.insert(fileData, files['waterFoamMask.raw'])
