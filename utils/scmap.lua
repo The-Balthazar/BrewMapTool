@@ -226,9 +226,15 @@ function scmapUtils.readDatastream(scmapData)
     data.textureMaskLow = intFile()
     data.textureMaskHigh = intFile()
 
-    if int()~=1 then return print"Unrecognised map file format: int? that should always be 1 isn't 1" end
-
-    data.waterMap = intFile()
+    local utilityTextures = int()
+    if utilityTextures==1 --[[and peekBytes(9):sub(-5)=='DDS |']] then
+        data.waterMap = intFile()
+    elseif utilityTextures>1 then
+        data.utilityTextures = {}
+        for i=1, utilityTextures do
+            table.insert(data.utilityTextures, intFile())
+        end
+    end
     local halfSize = data.size[1]/2*data.size[2]/2
     data.waterFoamMask = readBin(halfSize, 'raw')
     data.waterFlatness = readBin(halfSize, 'raw')
@@ -523,10 +529,19 @@ function scmapUtils.writeDatastream(files, filename, dir)
         progressReport(dir, filename, "Processing waterMap")
         int(1)--Image array count
         intFile(files.waterMap)
+    elseif files.utilityTextures then
+        progressReport(dir, filename, "Processing utility textures")
+        int(#files.utilityTextures)
+        if files.utilityTextures[1] and files.utilityTextures[1]:sub(1,5)~='DDS |' then
+            print("Warning map wont render correctly if the first utilityTexture file isn't a DDS.")
+        end
+        for i, data in ipairs(files.utilityTextures) do
+            intFile(data)
+        end
     else
         progressReport(dir, filename, "Doing nothing")
         int(0)
-        print("Warning map wont render correctly if the first file in this array isn't a dds image.")
+        print("Warning map wont render correctly with no waterMap/utilityTextures dds image.")
     end
 
     progressReport(dir, filename, "Processing remaining raw files")
@@ -643,15 +658,17 @@ function scmapUtils.exportScmapData(data, folder)
             love.thread.getChannel(channel):push(-1)
         end
     end
-    if data.arbitrary then
-        love.filesystem.createDirectory(folder..'arbitrary')
-        for i, file in ipairs(data.arbitrary) do
-            local filename = (file.__filename or 'arbitrary'..i..'.'..file.__format)
-            love.thread.getChannel(channel):push("Writing "..filename)
-            love.filesystem.write(folder..'arbitrary/'..filename, file[1])
-            love.thread.getChannel(channel):push(-1)
+    for i, foldername in ipairs{'arbitrary', 'utilityTextures'} do
+        if data[foldername] then
+            love.filesystem.createDirectory(folder..foldername)
+            for i, file in ipairs(data[foldername]) do
+                local filename = file.__filename or ('_utilityc%d.%s'):format(i-1, file.__format)
+                love.thread.getChannel(channel):push("Writing "..filename)
+                love.filesystem.write(folder..foldername..'/'..filename, file[1])
+                love.thread.getChannel(channel):push(-1)
+            end
+            data[foldername] = nil
         end
-        data.arbitrary = nil
     end
     love.thread.getChannel(channel):push("Writing data.lua")
 

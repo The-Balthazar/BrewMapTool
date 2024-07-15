@@ -17,10 +17,10 @@ local components = {
     ["waterDepthBiasMask.raw"] = true,
     ["waterFlatness.raw"] = true,
     ["waterFoamMask.raw"] = true,
-    waterMap = true,
 }
 local optional = {
     normalMap = true,
+    waterMap = true,
 }
 local splitData = {
     ["waveGenerators.lua"] = true,
@@ -43,7 +43,7 @@ for i, v in ipairs(love.filesystem.getDirectoryItems(dir)) do
         end
     end
 end
-if count~=10 then
+if count~=9 then
     return print("Folder contains", count, "of the 10 expected files. Expected:", [[
 
         data.lua
@@ -100,6 +100,16 @@ if arbitrary and arbitrary[1] then
     end
     table.insert(arbitraryFiles, 1, fileformats.indexLuaToBin(newIndex))
     components.arbitrary = arbitraryFiles
+end
+local utilityTextures = love.filesystem.getDirectoryItems(dir..'utilityTextures/')
+if utilityTextures and utilityTextures[1] then
+    table.sort(utilityTextures)
+    local arbitraryFiles = {}
+    for i, filename in ipairs(utilityTextures) do
+        local file = love.filesystem.read(dir..'utilityTextures/'..filename)
+        table.insert(arbitraryFiles, file)
+    end
+    components.utilityTextures = arbitraryFiles
 end
 
 local data = components['data.lua']
