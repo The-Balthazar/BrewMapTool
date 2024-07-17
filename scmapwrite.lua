@@ -113,7 +113,6 @@ if utilityTextures and utilityTextures[1] then
 end
 
 local data = components['data.lua']
-data.waveGenerators = data.waveGenerators or data.waveGenerators.waterSettings--NOTE: Legacy
 local progressTotal = (type(data.waveGenerators)=='table' and #data.waveGenerators or 0)
                     + (type(data.decals)        =='table' and #data.decals or 0)
                     + (type(data.decalGroups)   =='table' and #data.decalGroups or 0)

@@ -308,17 +308,9 @@ function scmapUtils.readDatastream(scmapData)
 end
 
 local function hex2bin(hex) return string.char(tonumber(hex, 16)) end
-local function hex2bin2(a,b) return hex2bin(a)..hex2bin(b) end
 local function hex2bin4(a,b,c,d) return hex2bin(a)..hex2bin(b)..hex2bin(c)..hex2bin(d) end
 local function hexSplit4(val) return hex2bin4(val:sub(-8,-7),val:sub(-6,-5),val:sub(-4,-3),val:sub(-2,-1)) end
-local function hexSplitFlip4(val) return hex2bin4(val:sub(-2,-1),val:sub(-4,-3),val:sub(-6,-5),val:sub(-8,-7)) end
-
-local function rfloat(val) return hexSplit4(val) end
-local function rvec2(vec) return rfloat(vec[1])..rfloat(vec[2]) end
-local function rvec3(vec) return rfloat(vec[1])..rfloat(vec[2])..rfloat(vec[3]) end
-local function rvec4(vec) return rfloat(vec[1])..rfloat(vec[2])..rfloat(vec[3])..rfloat(vec[4]) end
-local function rstringNull(str) return (str or '')..'\000' end
-local function rint(val) return math.intToIBM(val) end
+local function rvec3(vec) return math.floatToIBM(vec[1])..math.floatToIBM(vec[2])..math.floatToIBM(vec[3]) end
 
 local function progressReport(dir, filename, message, i, t)
     love.thread.getChannel(dir):push(-1)
@@ -335,13 +327,13 @@ function scmapUtils.writeDatastream(files, filename, dir)
 
     progressReport(dir, filename, "starting packing")
 
-    local function float(val) table.insert(fileData, hexSplit4(val)) end
-    local function vec2(vec)  table.insert(fileData, rvec2(vec)) end
-    local function vec3(vec)  table.insert(fileData, rvec3(vec)) end
-    local function vec4(vec)  table.insert(fileData, rvec4(vec)) end
-    local function int(val)   table.insert(fileData, rint(val)) end
-    local function intFile(file) table.insert(fileData, rint(file:len())..file) end
-    local function stringNull(str) table.insert(fileData, rstringNull(str)) end
+    local function float(val) table.insert(fileData, math.floatToIBM(val)) end
+    local function vec2(vec)  table.insert(fileData, math.floatToIBM(vec[1])..math.floatToIBM(vec[2])) end
+    local function vec3(vec)  table.insert(fileData, math.floatToIBM(vec[1])..math.floatToIBM(vec[2])..math.floatToIBM(vec[3])) end
+    local function vec4(vec)  table.insert(fileData, math.floatToIBM(vec[1])..math.floatToIBM(vec[2])..math.floatToIBM(vec[3])..math.floatToIBM(vec[4])) end
+    local function int(val)   table.insert(fileData, math.intToIBM(val)) end
+    local function intFile(file) table.insert(fileData, math.intToIBM(file:len())..file) end
+    local function stringNull(str) table.insert(fileData, (str or '')..'\000') end
 
     float(data.floatWidth)
     float(data.floatHeight)
@@ -415,33 +407,33 @@ function scmapUtils.writeDatastream(files, filename, dir)
 
     progressReport(dir, filename, "Processing wave generators")
     local waveGenCount = #data.waveGenerators
-    local waveGenStrings = {rint(waveGenCount)}
+    local waveGenStrings = {math.intToIBM(waveGenCount)}
     for i, v in ipairs(data.waveGenerators) do
         progressReport(dir, filename, "Processing wave generators", i, waveGenCount)
         table.insert(waveGenStrings, table.concat{
-            rstringNull(v.textureName),
-            rstringNull(v.rampName),
+            (v.textureName or ''),'\000',
+            (v.rampName or ''),'\000',
             rvec3(v.position),
-            rfloat(v.rotation),
+            math.floatToIBM(v.rotation),
             rvec3(v.velocity),
 
-            rfloat(v.lifeTimeFirst),
-            rfloat(v.lifeTimeSecond),
-            rfloat(v.periodFirst),
-            rfloat(v.periodSecond),
-            rfloat(v.scaleFirst),
-            rfloat(v.scaleSecond),
-            rfloat(v.frameCount),
-            rfloat(v.frameRateFirst),
-            rfloat(v.frameRateSecond),
-            rfloat(v.stripCount),
+            math.floatToIBM(v.lifeTimeFirst),
+            math.floatToIBM(v.lifeTimeSecond),
+            math.floatToIBM(v.periodFirst),
+            math.floatToIBM(v.periodSecond),
+            math.floatToIBM(v.scaleFirst),
+            math.floatToIBM(v.scaleSecond),
+            math.floatToIBM(v.frameCount),
+            math.floatToIBM(v.frameRateFirst),
+            math.floatToIBM(v.frameRateSecond),
+            math.floatToIBM(v.stripCount),
         })
     end
     table.insert(fileData, table.concat(waveGenStrings))
 
     progressReport(dir, filename, "Processing minimap data")
     table.insert(fileData, table.concat{
-        rint(data.miniMapContourInterval),
+        math.intToIBM(data.miniMapContourInterval),
         hexSplit4(data.miniMapDeepWaterColor),
         hexSplit4(data.miniMapContourColor),
         hexSplit4(data.miniMapShoreColor),
@@ -465,16 +457,16 @@ function scmapUtils.writeDatastream(files, filename, dir)
 
     progressReport(dir, filename, "Processing decals")
     local decalCount = #data.decals
-    local decalsStrings = {rint(decalCount)}
+    local decalsStrings = {math.intToIBM(decalCount)}
     for i, decal in ipairs(data.decals) do
         progressReport(dir, filename, "Processing decals", i, decalCount)
         local decalBuffer = {
-            rint(decal.id),
-            rint(decal.type),
-            rint(#decal.textures),
+            math.intToIBM(decal.id),
+            math.intToIBM(decal.type),
+            math.intToIBM(#decal.textures),
         }
         for i, path in ipairs(decal.textures) do
-            table.insert(decalBuffer, rint(#path))
+            table.insert(decalBuffer, math.intToIBM(#path))
             table.insert(decalBuffer, path)
         end
         table.insert(decalsStrings, table.concat(decalBuffer))
@@ -482,9 +474,9 @@ function scmapUtils.writeDatastream(files, filename, dir)
             rvec3(decal.scale),
             rvec3(decal.position),
             rvec3(decal.rotation),
-            rfloat(decal.LODCutoff),
-            rfloat(decal.LODCutoffMin),
-            rint(decal.army),
+            math.floatToIBM(decal.LODCutoff),
+            math.floatToIBM(decal.LODCutoffMin),
+            math.intToIBM(decal.army),
         })
     end
     table.insert(fileData, table.concat(decalsStrings))
@@ -595,11 +587,11 @@ function scmapUtils.writeDatastream(files, filename, dir)
     progressReport(dir, filename, "Processing props")
     if type(data.props)=='table' then
         local propCount = #data.props
-        local propStrings = {rint(propCount)}
+        local propStrings = {math.intToIBM(propCount)}
         for i, prop in ipairs(data.props) do
             progressReport(dir, filename, "Processing props", i, propCount)
             table.insert(propStrings, table.concat{
-                rstringNull(prop.path),
+                (prop.path or ''), '\000',
                 rvec3(prop.position),
                 rvec3(prop.rotationX),
                 rvec3(prop.rotationY),
@@ -629,7 +621,7 @@ function scmapUtils.readHeightmap(heightmapRaw, width, height, heightmapScale)
     local index = -1
     local yIndex = 0
 
-    for little, big in heightmapRaw:gmatch'(.)(.)' do--Look brothers, TITS!
+    for short in heightmapRaw:gmatch'(..)' do
         index=index+1
         if index>width then index=0 end
         if index==0 then
@@ -637,7 +629,7 @@ function scmapUtils.readHeightmap(heightmapRaw, width, height, heightmapScale)
             heightmap[yIndex] = currentRow
             yIndex = yIndex+1
         end
-        height = math.IBMShort2(little, big)/(heightmapScale and (1/heightmapScale) or 128)
+        height = math.IBMShort(short)/(heightmapScale and (1/heightmapScale) or 128)
         min = math.min(min, height)
         max = math.max(max, height)
         currentRow[index] = height

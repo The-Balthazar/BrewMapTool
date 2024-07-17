@@ -142,7 +142,7 @@ local formats = {
             table.insert(progressChannels, {channel=love.thread.getChannel(filename), name=filename, id=filename})
         end
 
-        local heightmap, minHeight, maxHeight = scmapUtils.readHeightmap(data.heightmap[1], data.size[1], data.size[2], heightmapScale)--data.heightmapScale is currently an unparsed float.
+        local heightmap, minHeight, maxHeight = scmapUtils.readHeightmap(data.heightmap[1], data.size[1], data.size[2], data.heightmapScale)
         drawcanvas = scmapUtils.renderHeightmapToCanvas(nil, heightmap, minHeight, maxHeight)
         scmapUtils.renderBlockingToCanvas(drawcanvas, scmapUtils.getBlockingData(heightmap))
 
