@@ -639,7 +639,7 @@ end
 
 function scmapUtils.exportScmapData(data, folder)
     local channel = folder
-    love.thread.getChannel(folder):push(13 + (data.normapMap and 1 or 0) + (data.arbitrary and #data.arbitrary or 0))
+    love.thread.getChannel(folder):push(4)
     if folder then love.filesystem.createDirectory(folder) end
     folder = (folder and folder..'/' or '')
     for k, v in pairs(data) do
@@ -647,9 +647,10 @@ function scmapUtils.exportScmapData(data, folder)
             love.thread.getChannel(channel):push("Writing "..k)
             love.filesystem.write(folder..k..'.'..v.__format, v[1])
             data[k] = nil
-            love.thread.getChannel(channel):push(-1)
         end
     end
+    love.thread.getChannel(channel):push(-1)
+
     for i, foldername in ipairs{'arbitrary', 'utilityTextures'} do
         if data[foldername] then
             love.filesystem.createDirectory(folder..foldername)
@@ -657,20 +658,20 @@ function scmapUtils.exportScmapData(data, folder)
                 local filename = file.__filename or ('_utilityc%d.%s'):format(i-1, file.__format)
                 love.thread.getChannel(channel):push("Writing "..filename)
                 love.filesystem.write(folder..foldername..'/'..filename, file[1])
-                love.thread.getChannel(channel):push(-1)
             end
             data[foldername] = nil
         end
     end
-    love.thread.getChannel(channel):push("Writing data.lua")
+    love.thread.getChannel(channel):push(-1)
 
+    love.thread.getChannel(channel):push("Writing data.lua")
     for i, set in ipairs{'waveGenerators', 'decals', 'props'} do
         if data[set] and #data[set]>100 then
             love.filesystem.write(folder..set..'.lua', table.serialize(data[set]))
             data[set] = nil
-            love.thread.getChannel(channel):push(-1)
         end
     end
+    love.thread.getChannel(channel):push(-1)
 
     love.filesystem.write(folder..'data.lua', table.serialize(data))
     love.thread.getChannel(channel):push("Done")
