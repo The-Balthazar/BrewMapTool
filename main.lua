@@ -4,8 +4,6 @@ require'utils.scmap'
 require'utils.fileformats'
 
 local drawcanvas
-function love.load()
-end
 
 local progressChannels = {}
 local workingFileNames = {}
@@ -142,11 +140,13 @@ local formats = {
             table.insert(progressChannels, {channel=love.thread.getChannel(filename), name=filename, id=filename})
         end
 
-        local heightmap, minHeight, maxHeight = scmapUtils.readHeightmap(data.heightmap[1], data.size[1], data.size[2], data.heightmapScale)
-        drawcanvas = scmapUtils.renderHeightmapToCanvas(nil, heightmap, minHeight, maxHeight)
-        scmapUtils.renderBlockingToCanvas(drawcanvas, scmapUtils.getBlockingData(heightmap))
+        if love.window then
+            local heightmap, minHeight, maxHeight = scmapUtils.readHeightmap(data.heightmap[1], data.size[1], data.size[2], data.heightmapScale)
+            drawcanvas = scmapUtils.renderHeightmapToCanvas(nil, heightmap, minHeight, maxHeight)
+            scmapUtils.renderBlockingToCanvas(drawcanvas, scmapUtils.getBlockingData(heightmap))
 
-        love.window.setTitle("Map: "..filename.." - Render scale: x"..math.min(1025/(data.size[1]+1), 1025/(data.size[2]+1)))
+            love.window.setTitle("Map: "..filename.." - Render scale: x"..math.min(1025/(data.size[1]+1), 1025/(data.size[2]+1)))
+        end
     end,
     raw = function(filename, file)
         local data = file:read'data'
@@ -184,7 +184,7 @@ local directoryFormats = {
             love.thread.getChannel'scmapwrite':push(dir)
             table.insert(progressChannels, {channel=love.thread.getChannel(dir), name=id, id=dir})
 
-            if love.filesystem.getInfo(dir..'heightmap.raw') then
+            if love.window and love.filesystem.getInfo(dir..'heightmap.raw') then
                 local heightmapRaw = love.filesystem.read(dir..'heightmap.raw')
                 local sizeGuess = math.sqrt(heightmapRaw:len()/2)
                 if sizeGuess%1~=0 then return print"Can't guess heightmap size for preview" end
@@ -208,3 +208,18 @@ function love.directorydropped(folder)
         handler(mountpoint..'/')
     end
 end
+
+function love.load(arg, unfilteredArg)
+    if not arg[1] then
+        require'love.font'
+        require'love.window'
+        require'love.graphics'
+        love.window.setMode(1025, 1025, {
+            fullscreen = false,
+            usedpiscale = false,
+            resizable = true,
+        })
+        love.window.setTitle'BrewMapTool'
+    end
+end
+
