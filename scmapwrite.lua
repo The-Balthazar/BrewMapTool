@@ -27,8 +27,12 @@ local splitData = {
     props = true,
     ["decals.lua"] = true,
 }
+local extraSplitData = {
+    props = {},
+}
 local count = 0
 for i, v in ipairs(love.filesystem.getDirectoryItems(dir)) do
+    local fileDone
     for i, group in ipairs{components, splitData, optional} do
         local key = group[v] and v or v:match'^([^.]*)'
         if group[key] then
@@ -40,7 +44,14 @@ for i, v in ipairs(love.filesystem.getDirectoryItems(dir)) do
             if group == components then
                 count = count+1
             end
+            fileDone = true
             break
+        end
+    end
+    if not fileDone then
+        local key, i = v:match('^([^.0-9]*)([0-9]*)')
+        if extraSplitData[key] then
+            extraSplitData[key][tonumber(i)] = love.filesystem.load(dir..v)()
         end
     end
 end
@@ -67,6 +78,16 @@ end
 for k, d in pairs(splitData) do
     if type(d)~='boolean' then
         components['data.lua'][k:match'^([^.]*)'] = d
+    end
+end
+for k, d in pairs(extraSplitData) do
+    if next(d) then
+        components['data.lua'][k] = components['data.lua'][k] or {}
+        for i, v in ipairs(d) do
+            for i, v in ipairs(v) do
+                table.insert(components['data.lua'][k], v)
+            end
+        end
     end
 end
 local arbitrary = love.filesystem.getDirectoryItems(dir..'arbitrary/')

@@ -287,9 +287,30 @@ function scmapUtils.readDatastream(scmapData)
 
     local propCount = int()
     if propCount>2900 then -- ~65k/[num values per prop, including tables]
-        print("Warning: Prop count might exceed what could be read back in as a Lua table. Writing as binary blob instead.")
-        data.props = {scmapData:getString(fileOffset), __format = 'raw'}
-        fileOffset = scmapData:getSize()
+        if largePropBinaryBlob then
+            print("Warning: Prop count might exceed what could be read back in as a Lua table. Writing as binary blob instead.")
+            data.props = {scmapData:getString(fileOffset), __format = 'raw'}
+            fileOffset = scmapData:getSize()
+        else
+            data.propsGroups = {}
+            for k=0, math.floor(propCount/1000) do
+                data.propsGroups[k+1] = table.new(1000, 0)
+                for i=1, 1000 do
+                    local index = k*1000+i
+                    if index>propCount then
+                        break
+                    end
+                    data.propsGroups[k+1][i] = {
+                        path = stringNull(),
+                        position = vec3(),
+                        rotationX = vec3(),
+                        rotationY = vec3(),
+                        rotationZ = vec3(),
+                        scale = vec3(),
+                    }
+                end
+            end
+        end
     else
         data.props = table.new(propCount, 0)
         for i=1, propCount do
@@ -616,7 +637,7 @@ end
 
 function scmapUtils.exportScmapData(data, folder)
     local channel = folder
-    love.thread.getChannel(folder):push(4)
+    love.thread.getChannel(folder):push(5)
     if folder then love.filesystem.createDirectory(folder) end
     folder = (folder and folder..'/' or '')
     for k, v in pairs(data) do
@@ -648,9 +669,20 @@ function scmapUtils.exportScmapData(data, folder)
             data[set] = nil
         end
     end
-    love.thread.getChannel(channel):push(-1)
 
+    love.thread.getChannel(channel):push(-1)
+    for i, set in ipairs{'propsGroups'} do
+        if data[set] then
+            for i, subset in pairs(data[set]) do
+                love.filesystem.write(folder..set:gsub('Groups', i)..'.lua', table.serialize(subset))
+            end
+            data[set] = nil
+        end
+    end
+
+    love.thread.getChannel(channel):push(-1)
     love.filesystem.write(folder..'data.lua', table.serialize(data))
+    
     love.thread.getChannel(channel):push("Done")
     love.thread.getChannel(channel):push(-1)
     love.system.openURL(love.filesystem.getSaveDirectory()..'/'..folder)
