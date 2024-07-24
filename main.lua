@@ -139,8 +139,8 @@ local directoryFormats = {
                 local heightmapRaw = love.filesystem.read(dir..'heightmap.raw')
                 local sizeGuess = math.sqrt(heightmapRaw:len()/2)
                 if sizeGuess%1~=0 then return print"Can't guess heightmap size for preview" end
-                local heightmap, minHeight, maxHeight = heightmap.read(heightmapRaw, sizeGuess-1, sizeGuess-1, 1)
-                drawcanvas = heightmap.renderToCanvas(nil, heightmap, minHeight, maxHeight)
+                local heightmapData, minHeight, maxHeight = heightmap.read(heightmapRaw, sizeGuess-1, sizeGuess-1, 1)
+                drawcanvas = heightmap.renderToCanvas(nil, heightmapData, minHeight, maxHeight)
             end
         end
     end,
