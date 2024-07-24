@@ -40,6 +40,7 @@ for i, v in ipairs(love.filesystem.getDirectoryItems(dir)) do
             if group == components then
                 count = count+1
             end
+            break
         end
     end
 end
