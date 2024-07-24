@@ -64,8 +64,8 @@ function scmapUtils.readDatastream(scmapData)
         return {image, __format = getFormat(image)}
     end
 
-    data.floatWidth = float()
-    data.floatHeight = float()
+    --[[data.floatWidth =]] float()
+    --[[data.floatHeight =]] float()
 
     if readBytes(6)~='\000\000\000\000\000\000' then return print"Unrecognised map file format: missing padding" end
 
@@ -204,8 +204,8 @@ function scmapUtils.readDatastream(scmapData)
         table.insert(data.decalGroups, group)
     end
 
-    data.intWidth = int()
-    data.intHeight = int()
+    --[[data.intWidth =]] int()
+    --[[data.intHeight =]] int()
 
     local arbitraryFiles = int()
     if arbitraryFiles==1 and peekBytes(9):sub(-5)=='DDS |' then
@@ -358,8 +358,8 @@ function scmapUtils.writeDatastream(files, filename, dir)
     local function intFile(file) table.insert(fileData, math.intToIBM(file:len())..file) end
     local function stringNull(str) table.insert(fileData, (str or '')..'\000') end
 
-    float(data.floatWidth)
-    float(data.floatHeight)
+    float(data.size[1])
+    float(data.size[2])
 
     table.insert(fileData, '\000\000\000\000\000\000')
 
@@ -517,8 +517,8 @@ function scmapUtils.writeDatastream(files, filename, dir)
         end
     end
 
-    int(data.intWidth)
-    int(data.intHeight)
+    int(data.size[1])
+    int(data.size[2])
 
     if files.normalMap then
         progressReport(dir, filename, "Processing normalMap")
@@ -682,7 +682,7 @@ function scmapUtils.exportScmapData(data, folder)
 
     love.thread.getChannel(channel):push(-1)
     love.filesystem.write(folder..'data.lua', table.serialize(data))
-    
+
     love.thread.getChannel(channel):push("Done")
     love.thread.getChannel(channel):push(-1)
     love.system.openURL(love.filesystem.getSaveDirectory()..'/'..folder)
