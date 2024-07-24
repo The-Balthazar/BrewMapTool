@@ -93,8 +93,10 @@ local formats = {
         if love.window then
             local heightmapData, minHeight, maxHeight = heightmapUtils.read(data.heightmap[1], data.size[1], data.size[2], data.heightmapScale)
             drawcanvas = heightmapUtils.renderToCanvas(nil, heightmapData, minHeight, maxHeight)
-            heightmapUtils.renderOverlayToCanvas(drawcanvas, heightmapUtils.getBlockingData(heightmapData), {1,0,0}, 'screen')
-            heightmapUtils.renderOverlayToCanvas(drawcanvas, heightmapUtils.getWaterData(heightmapData, data.waterSettings.elevation), {0,0,1,0.5}, 'screen')
+            heightmapUtils.renderOverlayToCanvas(drawcanvas, heightmapUtils.getBlockingData(heightmapData), {1,0,0}, 'multiply')
+            local watermap, abyssmap = heightmapUtils.getWaterData(heightmapData, data.waterSettings.elevation)
+            heightmapUtils.renderOverlayToCanvas(drawcanvas, abyssmap, {0.75,0,0.5}, 'multiply')
+            heightmapUtils.renderOverlayToCanvas(drawcanvas, watermap, {0,0,0.5}, 'screen')
 
             love.window.setTitle("Map: "..filename.." - Render scale: x"..math.min(1025/(data.size[1]+1), 1025/(data.size[2]+1)))
         end

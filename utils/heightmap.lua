@@ -34,7 +34,7 @@ function heightmapUtils.renderToCanvas(canvas, heightmap, minHeight, maxHeight)
     for x=0,width do
         for y=0,height do
             local normal = (heightmap[x][y]-minHeight)/(maxHeight-minHeight)
-            love.graphics.setColor(0, normal, 0)
+            love.graphics.setColor(normal, normal, normal)
             love.graphics.points(x+0.5,y+0.5)
         end
     end
@@ -81,14 +81,18 @@ function heightmapUtils.renderOverlayToCanvas(canvas, datamap, colour, blend)
     return canvas
 end
 
+local abyssDepth = 25
 function heightmapUtils.getWaterData(heightmap, waterlevel)
     local width, height = #heightmap, #heightmap[0]
     local waterMap = table.new(width, 1)
+    local abyssMap = table.new(width, 1)
     for x=0, width do
         waterMap[x] = table.new(height, 1)
+        abyssMap[x] = table.new(height, 1)
         for y=0, height do
             waterMap[x][y] = heightmap[x][y]<waterlevel
+            abyssMap[x][y] = waterMap[x][y] and heightmap[x][y]<waterlevel-abyssDepth
         end
     end
-    return waterMap
+    return waterMap, abyssMap
 end
