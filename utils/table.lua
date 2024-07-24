@@ -1,3 +1,5 @@
+require'table.new'
+
 local reserved = {
     ['and']    = 'and',
     ['break']  = 'break',

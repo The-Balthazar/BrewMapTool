@@ -129,8 +129,9 @@ function scmapUtils.readDatastream(scmapData)
             {movement = vec2(), path = stringNull()},
         },
     }
-    data.waveGenerators = {}
-    for i=1, int() do
+    local waveGeneratorCount = int()
+    data.waveGenerators = table.new(waveGeneratorCount, 0)
+    for i=1, waveGeneratorCount do
         table.insert(data.waveGenerators, {
             textureName = stringNull(),
             rampName = stringNull(),
@@ -170,8 +171,9 @@ function scmapUtils.readDatastream(scmapData)
     data.unknown1 = math.formatBytes(readBytes(4))
     data.unknown2 = math.formatBytes(readBytes(4))
 
-    data.decals = {}
-    for i=1, int() do
+    local decalCount = int()
+    data.decals = table.new(decalCount, 0)
+    for i=1, decalCount do
         local decal = {
             id = int(),
             type = int(),
@@ -283,14 +285,14 @@ function scmapUtils.readDatastream(scmapData)
         data.skyBox.clouds7 = float()
     end
 
-    data.props = {}
-    if math.IMBInt(peekBytes(4))>2900 then -- ~65k/[num values per prop, including tables]
+    local propCount = int()
+    if propCount>2900 then -- ~65k/[num values per prop, including tables]
         print("Warning: Prop count might exceed what could be read back in as a Lua table. Writing as binary blob instead.")
-        data.props[1] = scmapData:getString(fileOffset)
+        data.props = {scmapData:getString(fileOffset), __format = 'raw'}
         fileOffset = scmapData:getSize()
-        data.props.__format = 'raw'
     else
-        for i=1, int() do
+        data.props = table.new(propCount, 0)
+        for i=1, propCount do
             table.insert(data.props, {
                 path = stringNull(),
                 position = vec3(),
