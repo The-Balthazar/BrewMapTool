@@ -95,12 +95,13 @@ if arbitrary and arbitrary[1] then
     table.sort(arbitrary)
     local arbitraryFiles = {}
 
-    local index = table.find(arbitrary, 'index.lua')
+    --Sort files as per provided index
+    local indexFile = table.find(arbitrary, 'index.lua')
     local newIndex = {}
-    if index and table.remove(arbitrary, index) then
-        index = love.filesystem.load(dir..'arbitrary/index.lua')()
-        if index and index[1] then
-            for i, filename in ipairs(index) do
+    if indexFile and table.remove(arbitrary, indexFile) then
+        indexFile = love.filesystem.load(dir..'arbitrary/index.lua')()
+        if indexFile and indexFile[1] then
+            for i, filename in ipairs(indexFile) do
                 local found = table.find(arbitrary, filename)
                 if found and table.remove(arbitrary, found) then
                     local file = love.filesystem.read(dir..'arbitrary/'..filename)
@@ -114,13 +115,33 @@ if arbitrary and arbitrary[1] then
     else
         print("No index found in arbitrary file directory. Generating one.")
     end
+
+    --Indexing files [absent from provided index]
     for i, filename in ipairs(arbitrary) do
         local file = love.filesystem.read(dir..'arbitrary/'..filename)
         table.insert(arbitraryFiles, file)
         table.insert(newIndex, filename)
         print("Appending", filename, "to index.")
     end
-    table.insert(arbitraryFiles, 1, fileformats.indexLuaToBin(newIndex))
+
+    --Checking if we actually want an index
+    local includeIndex = indexFile
+    if not includeIndex then
+        local arbitraryLooksLikeTextureArray = true
+        for i, filename in ipairs(newIndex) do
+            if ('_utilityc%d.dds'):format(i-1)~=filename then
+                arbitraryLooksLikeTextureArray = nil
+                break
+            end
+        end
+        if arbitraryLooksLikeTextureArray then
+            print("Arbitrary file array looks like a utility texture array, discarding index.")
+            includeIndex = nil
+        end
+    end
+    if includeIndex then
+        table.insert(arbitraryFiles, 1, fileformats.indexLuaToBin(newIndex))
+    end
     components.arbitrary = arbitraryFiles
 end
 local utilityTextures = love.filesystem.getDirectoryItems(dir..'utilityTextures/')
