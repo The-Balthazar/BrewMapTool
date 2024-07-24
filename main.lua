@@ -1,6 +1,7 @@
 require'utils.maths'
 require'utils.table'
 require'utils.scmap'
+require'utils.heightmap'
 require'utils.fileformats'
 
 local drawcanvas
@@ -66,57 +67,6 @@ function love.update(delta)
     end
 end
 
-function scmapUtils.renderHeightmapToCanvas(canvas, heightmap, minHeight, maxHeight)
-    local width, height = #heightmap[0], #heightmap
-    if not canvas then canvas = love.graphics.newCanvas(width+1, height+1) end
-    love.graphics.setCanvas(canvas)
-    for x=0,width do
-        for y=0,height do
-            local normal = (heightmap[y][x]-minHeight)/(maxHeight-minHeight)
-            love.graphics.setColor(normal, normal, normal)
-            love.graphics.points(x+0.5,y+0.5)
-        end
-    end
-    love.graphics.setCanvas()
-    love.graphics.setColor(1,1,1)
-    return canvas
-end
-
-function scmapUtils.renderBlockingToCanvas(canvas, blockmap, offset)
-    local width, height = #blockmap[1], #blockmap
-    if not canvas then canvas = love.graphics.newCanvas(width, height) end
-    love.graphics.setCanvas(canvas)
-    for x=1,width do
-        for y=1,height do
-            if blockmap[y][x] then
-                love.graphics.setColor(1, 0, 0)
-                love.graphics.points(x+(offset or 0.5),y+(offset or 0.5))
-            end
-        end
-    end
-    love.graphics.setCanvas()
-    love.graphics.setColor(1,1,1)
-    return canvas
-end
-
-local max, abs = math.max, math.abs
-local function canPathSlope(h,x,y)
-    local a,b,c,d = h[y-1][x-1],h[y][x-1],h[y][x],h[y-1][x]
-    return max(abs(a-b), abs(b-c), abs(c-d), abs(d-a)) <= 0.75--NOTE 0.75 MaxSlope from footprints.lua
-end
-
-function scmapUtils.getBlockingData(heightmap)
-    local width, height = #heightmap[0], #heightmap
-    local blockingMap = {}
-    for y=1, height do
-        blockingMap[y] = {}
-        for x=1, width do
-            blockingMap[y][x] = not canPathSlope(heightmap,x,y)
-        end
-    end
-    return blockingMap
-end
-
 local formats = {
     scmap = function(filename, file)
         local data = scmapUtils.readDatastream(file:read'data')
@@ -141,9 +91,10 @@ local formats = {
         end
 
         if love.window then
-            local heightmap, minHeight, maxHeight = scmapUtils.readHeightmap(data.heightmap[1], data.size[1], data.size[2], data.heightmapScale)
-            drawcanvas = scmapUtils.renderHeightmapToCanvas(nil, heightmap, minHeight, maxHeight)
-            scmapUtils.renderBlockingToCanvas(drawcanvas, scmapUtils.getBlockingData(heightmap))
+            local heightmapData, minHeight, maxHeight = heightmap.read(data.heightmap[1], data.size[1], data.size[2], data.heightmapScale)
+            drawcanvas = heightmap.renderToCanvas(nil, heightmapData, minHeight, maxHeight)
+            heightmap.renderOverlayToCanvas(drawcanvas, heightmap.getBlockingData(heightmapData), {1,0,0}, 'multiply')
+            heightmap.renderOverlayToCanvas(drawcanvas, heightmap.getWaterData(heightmapData, data.waterSettings.elevation), {0,0,1,0.5}, 'screen')
 
             love.window.setTitle("Map: "..filename.." - Render scale: x"..math.min(1025/(data.size[1]+1), 1025/(data.size[2]+1)))
         end
@@ -152,8 +103,8 @@ local formats = {
         local data = file:read'data'
         local sizeGuess = math.sqrt(data:getSize()/2)
         if sizeGuess%1~=0 then return print"Can't guess raw file size" end
-        local heightmap, minHeight, maxHeight = scmapUtils.readHeightmap(data:getString(), sizeGuess-1, sizeGuess-1, 1)
-        drawcanvas = scmapUtils.renderHeightmapToCanvas(nil, heightmap, minHeight, maxHeight)
+        local heightmapData, minHeight, maxHeight = heightmap.read(data:getString(), sizeGuess-1, sizeGuess-1, 1)
+        drawcanvas = heightmap.renderToCanvas(nil, heightmapData, minHeight, maxHeight)
 
         love.window.setTitle("Raw: "..filename.." - Render scale: x"..math.min(1025/sizeGuess, 1025/sizeGuess))
     end,
@@ -188,8 +139,8 @@ local directoryFormats = {
                 local heightmapRaw = love.filesystem.read(dir..'heightmap.raw')
                 local sizeGuess = math.sqrt(heightmapRaw:len()/2)
                 if sizeGuess%1~=0 then return print"Can't guess heightmap size for preview" end
-                local heightmap, minHeight, maxHeight = scmapUtils.readHeightmap(heightmapRaw, sizeGuess-1, sizeGuess-1, 1)
-                drawcanvas = scmapUtils.renderHeightmapToCanvas(nil, heightmap, minHeight, maxHeight)
+                local heightmap, minHeight, maxHeight = heightmap.read(heightmapRaw, sizeGuess-1, sizeGuess-1, 1)
+                drawcanvas = heightmap.renderToCanvas(nil, heightmap, minHeight, maxHeight)
             end
         end
     end,

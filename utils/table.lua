@@ -112,3 +112,14 @@ function sortedpairs(set, sort)
         return keys[i], set[ keys[i] ]
     end
 end
+
+function table.transpose(grid)
+    local transposed = table.new(#grid[0], 1)
+    for x=0, #grid[0] do
+        transposed[x] = table.new(#grid, 1)
+        for y=0, #grid do
+            transposed[x][y] = grid[y][x]
+        end
+    end
+    return transposed
+end

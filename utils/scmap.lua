@@ -614,31 +614,6 @@ function scmapUtils.writeDatastream(files, filename, dir)
     love.system.openURL(love.filesystem.getSaveDirectory()..'/packed')
 end
 
-function scmapUtils.readHeightmap(heightmapRaw, width, height, heightmapScale)
-    local min, max = math.huge, 0
-
-    local heightmap = {}
-    local currentRow
-    local height
-    local index = -1
-    local yIndex = 0
-
-    for short in heightmapRaw:gmatch'(..)' do
-        index=index+1
-        if index>width then index=0 end
-        if index==0 then
-            currentRow = {}
-            heightmap[yIndex] = currentRow
-            yIndex = yIndex+1
-        end
-        height = math.IBMShort(short)/(heightmapScale and (1/heightmapScale) or 128)
-        min = math.min(min, height)
-        max = math.max(max, height)
-        currentRow[index] = height
-    end
-    return heightmap, min, max
-end
-
 function scmapUtils.exportScmapData(data, folder)
     local channel = folder
     love.thread.getChannel(folder):push(4)
