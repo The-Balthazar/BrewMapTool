@@ -91,10 +91,10 @@ local formats = {
         end
 
         if love.window then
-            local heightmapData, minHeight, maxHeight = heightmap.read(data.heightmap[1], data.size[1], data.size[2], data.heightmapScale)
-            drawcanvas = heightmap.renderToCanvas(nil, heightmapData, minHeight, maxHeight)
-            heightmap.renderOverlayToCanvas(drawcanvas, heightmap.getBlockingData(heightmapData), {1,0,0}, 'multiply')
-            heightmap.renderOverlayToCanvas(drawcanvas, heightmap.getWaterData(heightmapData, data.waterSettings.elevation), {0,0,1,0.5}, 'screen')
+            local heightmapData, minHeight, maxHeight = heightmapUtils.read(data.heightmap[1], data.size[1], data.size[2], data.heightmapScale)
+            drawcanvas = heightmapUtils.renderToCanvas(nil, heightmapData, minHeight, maxHeight)
+            heightmapUtils.renderOverlayToCanvas(drawcanvas, heightmapUtils.getBlockingData(heightmapData), {1,0,0}, 'screen')
+            heightmapUtils.renderOverlayToCanvas(drawcanvas, heightmapUtils.getWaterData(heightmapData, data.waterSettings.elevation), {0,0,1,0.5}, 'screen')
 
             love.window.setTitle("Map: "..filename.." - Render scale: x"..math.min(1025/(data.size[1]+1), 1025/(data.size[2]+1)))
         end
@@ -103,8 +103,8 @@ local formats = {
         local data = file:read'data'
         local sizeGuess = math.sqrt(data:getSize()/2)
         if sizeGuess%1~=0 then return print"Can't guess raw file size" end
-        local heightmapData, minHeight, maxHeight = heightmap.read(data:getString(), sizeGuess-1, sizeGuess-1, 1)
-        drawcanvas = heightmap.renderToCanvas(nil, heightmapData, minHeight, maxHeight)
+        local heightmapData, minHeight, maxHeight = heightmapUtils.read(data:getString(), sizeGuess-1, sizeGuess-1, 1)
+        drawcanvas = heightmapUtils.renderToCanvas(nil, heightmapData, minHeight, maxHeight)
 
         love.window.setTitle("Raw: "..filename.." - Render scale: x"..math.min(1025/sizeGuess, 1025/sizeGuess))
     end,
@@ -139,8 +139,8 @@ local directoryFormats = {
                 local heightmapRaw = love.filesystem.read(dir..'heightmap.raw')
                 local sizeGuess = math.sqrt(heightmapRaw:len()/2)
                 if sizeGuess%1~=0 then return print"Can't guess heightmap size for preview" end
-                local heightmapData, minHeight, maxHeight = heightmap.read(heightmapRaw, sizeGuess-1, sizeGuess-1, 1)
-                drawcanvas = heightmap.renderToCanvas(nil, heightmapData, minHeight, maxHeight)
+                local heightmapData, minHeight, maxHeight = heightmapUtils.read(heightmapRaw, sizeGuess-1, sizeGuess-1, 1)
+                drawcanvas = heightmapUtils.renderToCanvas(nil, heightmapData, minHeight, maxHeight)
             end
         end
     end,

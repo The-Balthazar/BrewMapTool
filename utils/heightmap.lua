@@ -1,8 +1,8 @@
-heightmap = {}
+heightmapUtils = {}
 
 --takes hightmap raw string, sizes+1
 --Outputs z-x array grid, and the min and max
-function heightmap.read(heightmapRaw, width, height, heightmapScale)
+function heightmapUtils.read(heightmapRaw, width, height, heightmapScale)
     local min, max = math.huge, 0
 
     local heightmap = table.new(height, 1)
@@ -27,14 +27,14 @@ function heightmap.read(heightmapRaw, width, height, heightmapScale)
     return table.transpose(heightmap), min, max
 end
 
-function heightmap.renderToCanvas(canvas, heightmap, minHeight, maxHeight)
+function heightmapUtils.renderToCanvas(canvas, heightmap, minHeight, maxHeight)
     local width, height = #heightmap, #heightmap[0]
     if not canvas then canvas = love.graphics.newCanvas(width+1, height+1) end
     love.graphics.setCanvas(canvas)
     for x=0,width do
         for y=0,height do
             local normal = (heightmap[x][y]-minHeight)/(maxHeight-minHeight)
-            love.graphics.setColor(normal, normal, normal)
+            love.graphics.setColor(0, normal, 0)
             love.graphics.points(x+0.5,y+0.5)
         end
     end
@@ -49,7 +49,7 @@ local function canPathSlope(h,x,y)
     return max(abs(a-b), abs(b-c), abs(c-d), abs(d-a)) <= 0.75--NOTE 0.75 MaxSlope from footprints.lua
 end
 
-function heightmap.getBlockingData(heightmap)
+function heightmapUtils.getBlockingData(heightmap)
     local width, height = #heightmap, #heightmap[0]
     local blockingMap = table.new(width, 0)
     for x=1, width do
@@ -61,7 +61,7 @@ function heightmap.getBlockingData(heightmap)
     return blockingMap
 end
 
-function heightmap.renderOverlayToCanvas(canvas, datamap, colour, blend)
+function heightmapUtils.renderOverlayToCanvas(canvas, datamap, colour, blend)
     local width, height = #datamap[1], #datamap
     if not canvas then canvas = love.graphics.newCanvas(width, height) end
     love.graphics.setCanvas(canvas)
@@ -81,7 +81,7 @@ function heightmap.renderOverlayToCanvas(canvas, datamap, colour, blend)
     return canvas
 end
 
-function heightmap.getWaterData(heightmap, waterlevel)
+function heightmapUtils.getWaterData(heightmap, waterlevel)
     local width, height = #heightmap, #heightmap[0]
     local waterMap = table.new(width, 1)
     for x=0, width do
