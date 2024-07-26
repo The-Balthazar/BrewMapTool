@@ -544,9 +544,14 @@ function scmapUtils.writeDatastream(files, filename, dir)
     end
 
     progressReport(dir, filename, "Processing remaining raw files")
-    table.insert(fileData, files['waterFoamMask.raw'])
-    table.insert(fileData, files['waterFlatness.raw'])
-    table.insert(fileData, files['waterDepthBiasMask.raw'])
+    local halfSize = data.size[1]*data.size[1]*0.25
+
+    for i, filename in ipairs{'waterFoamMask.raw', 'waterFlatness.raw', 'waterDepthBiasMask.raw'} do
+        if #files[filename]~=halfSize then print("Warning: ", filename, #files[filename], "bytes. expected: ", halfSize, "bytes") end
+        table.insert(fileData, files[filename])
+    end
+
+    if #files['terrainType.raw']~=data.size[1]*data.size[1] then print("Warning: terrainType.raw", #files['terrainType.raw'], "bytes. expected: ", data.size[1]*data.size[1], "bytes") end
     table.insert(fileData, files['terrainType.raw'])
 
     progressReport(dir, filename, "Processing skyBox")
