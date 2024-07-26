@@ -490,8 +490,19 @@ function scmapUtils.writeDatastream(files, filename, dir)
         end
     end
 
-    int(data.size[1])
-    int(data.size[2])
+    --These values seem unused, but are either meant to be the pixel size of the normal, or the number of o-grids it's supposed to cover.
+    --I'm assuming it's o-grids, not because it means I don't have to check the DDS header, but *because* I could check the DDS header
+    --Unless they planned to support other formats, it'd just be duplicated data. So I'm assuming it's grits it's to cover.
+    if files.normalMap and fileformats.isDDS(files.normalMap) then
+        int(data.size[1])
+        int(data.size[2])
+    elseif files.arbitrary and #files.arbitrary==4 and fileformats.isDDS(files.arbitrary[1]) then
+        int(data.size[1]*0.5)
+        int(data.size[2]*0.5)
+    else
+        int(0)
+        int(0)
+    end
 
     if files.normalMap then
         progressReport(dir, filename, "Processing normalMap")
