@@ -28,7 +28,9 @@ local splitData = {
     ["decals.lua"] = true,
 }
 local extraSplitData = {
+    waveGenerators = {},
     props = {},
+    decals = {},
 }
 local count = 0
 for i, v in ipairs(love.filesystem.getDirectoryItems(dir)) do

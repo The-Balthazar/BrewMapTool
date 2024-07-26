@@ -286,43 +286,16 @@ function scmapUtils.readDatastream(scmapData)
     end
 
     local propCount = int()
-    if propCount>2900 then -- ~65k/[num values per prop, including tables]
-        if largePropBinaryBlob then
-            print("Warning: Prop count might exceed what could be read back in as a Lua table. Writing as binary blob instead.")
-            data.props = {scmapData:getString(fileOffset), __format = 'raw'}
-            fileOffset = scmapData:getSize()
-        else
-            data.propsGroups = {}
-            for k=0, math.floor(propCount/1000) do
-                data.propsGroups[k+1] = table.new(1000, 0)
-                for i=1, 1000 do
-                    local index = k*1000+i
-                    if index>propCount then
-                        break
-                    end
-                    data.propsGroups[k+1][i] = {
-                        path = stringNull(),
-                        position = vec3(),
-                        rotationX = vec3(),
-                        rotationY = vec3(),
-                        rotationZ = vec3(),
-                        scale = vec3(),
-                    }
-                end
-            end
-        end
-    else
-        data.props = table.new(propCount, 0)
-        for i=1, propCount do
-            table.insert(data.props, {
-                path = stringNull(),
-                position = vec3(),
-                rotationX = vec3(),
-                rotationY = vec3(),
-                rotationZ = vec3(),
-                scale = vec3(),
-            })
-        end
+    data.props = table.new(propCount, 0)
+    for i=1, propCount do
+        table.insert(data.props, {
+            path = stringNull(),
+            position = vec3(),
+            rotationX = vec3(),
+            rotationY = vec3(),
+            rotationZ = vec3(),
+            scale = vec3(),
+        })
     end
 
     print("Parsed", fileOffset, "of", scmapData:getSize(), "total bytes")
@@ -637,7 +610,7 @@ end
 
 function scmapUtils.exportScmapData(data, folder)
     local channel = folder
-    love.thread.getChannel(folder):push(5)
+    love.thread.getChannel(folder):push(4)
     if folder then love.filesystem.createDirectory(folder) end
     folder = (folder and folder..'/' or '')
     for k, v in pairs(data) do
@@ -663,18 +636,20 @@ function scmapUtils.exportScmapData(data, folder)
     love.thread.getChannel(channel):push(-1)
 
     love.thread.getChannel(channel):push("Writing data.lua")
-    for i, set in ipairs{'waveGenerators', 'decals', 'props'} do
-        if data[set] and #data[set]>100 then
+    -- actual hard limits per file are 21845, 10922, and 10922: 65536 tables per file.
+    -- these numbers end up giving around 500kb per file.
+    for set, limit in pairs{waveGenerators=750, decals=920, props=870} do
+        local count = data[set] and #data[set] or 0
+        if count>100 and count<=limit then
             love.filesystem.write(folder..set..'.lua', table.serialize(data[set]))
             data[set] = nil
-        end
-    end
-
-    love.thread.getChannel(channel):push(-1)
-    for i, set in ipairs{'propsGroups'} do
-        if data[set] then
-            for i, subset in pairs(data[set]) do
-                love.filesystem.write(folder..set:gsub('Groups', i)..'.lua', table.serialize(subset))
+        elseif count>limit then
+            for k=1, math.ceil(count/limit) do
+                local subset = table.new(limit, 0)
+                for i=1,limit do
+                    table.insert(subset, data[set][(k-1)*limit+i])
+                end
+                love.filesystem.write(folder..set..k..'.lua', table.serialize(subset))
             end
             data[set] = nil
         end
