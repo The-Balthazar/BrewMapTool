@@ -406,24 +406,24 @@ function scmapUtils.writeDatastream(files, filename, dir)
     local waveGenStrings = {math.intToIBM(waveGenCount)}
     for i, v in ipairs(data.waveGenerators) do
         progressReport(dir, filename, "Processing wave generators", i, waveGenCount)
-        table.insert(waveGenStrings, table.concat{
-            (v.textureName or ''),'\000',
-            (v.rampName or ''),'\000',
-            rvec3(v.position),
-            math.floatToIBM(v.rotation),
-            rvec3(v.velocity),
-
-            math.floatToIBM(v.lifeTimeFirst),
-            math.floatToIBM(v.lifeTimeSecond),
-            math.floatToIBM(v.periodFirst),
-            math.floatToIBM(v.periodSecond),
-            math.floatToIBM(v.scaleFirst),
-            math.floatToIBM(v.scaleSecond),
-            math.floatToIBM(v.frameCount),
-            math.floatToIBM(v.frameRateFirst),
-            math.floatToIBM(v.frameRateSecond),
-            math.floatToIBM(v.stripCount),
-        })
+        table.insert(waveGenStrings, love.data.pack('string',
+            'zz<fffffffffffffffff',
+            (v.textureName or ''),
+            (v.rampName or ''),
+            v.position[1], v.position[2], v.position[3],
+            v.rotation,
+            v.velocity[1], v.velocity[2], v.velocity[3],
+            v.lifeTimeFirst,
+            v.lifeTimeSecond,
+            v.periodFirst,
+            v.periodSecond,
+            v.scaleFirst,
+            v.scaleSecond,
+            v.frameCount,
+            v.frameRateFirst,
+            v.frameRateSecond,
+            v.stripCount
+        ))
     end
     table.insert(fileData, table.concat(waveGenStrings))
 
@@ -457,23 +457,24 @@ function scmapUtils.writeDatastream(files, filename, dir)
     for i, decal in ipairs(data.decals) do
         progressReport(dir, filename, "Processing decals", i, decalCount)
         local decalBuffer = {
-            math.intToIBM(decal.id),
-            math.intToIBM(decal.type),
-            math.intToIBM(#decal.textures),
+            love.data.pack('string', '<i4i4i4', --These are probably unsigned, but also probably never big enough to matter
+                decal.id,
+                decal.type,
+                #decal.textures
+            )
         }
         for i, path in ipairs(decal.textures) do
-            table.insert(decalBuffer, math.intToIBM(#path))
-            table.insert(decalBuffer, path)
+            table.insert(decalBuffer, love.data.pack('string', '<s4', path))
         end
+        table.insert(decalBuffer, love.data.pack('string', '<fffffffffff<i4',
+            decal.scale[1], decal.scale[2], decal.scale[3],
+            decal.position[1], decal.position[2], decal.position[3],
+            decal.rotation[1], decal.rotation[2], decal.rotation[3],
+            decal.LODCutoff,
+            decal.LODCutoffMin,
+            decal.army
+        ))
         table.insert(decalsStrings, table.concat(decalBuffer))
-        table.insert(decalsStrings, table.concat{
-            rvec3(decal.scale),
-            rvec3(decal.position),
-            rvec3(decal.rotation),
-            math.floatToIBM(decal.LODCutoff),
-            math.floatToIBM(decal.LODCutoffMin),
-            math.intToIBM(decal.army),
-        })
     end
     table.insert(fileData, table.concat(decalsStrings))
 
@@ -602,14 +603,14 @@ function scmapUtils.writeDatastream(files, filename, dir)
         local propStrings = {math.intToIBM(propCount)}
         for i, prop in ipairs(data.props) do
             progressReport(dir, filename, "Processing props", i, propCount)
-            table.insert(propStrings, table.concat{
-                (prop.path or ''), '\000',
-                rvec3(prop.position),
-                rvec3(prop.rotationX),
-                rvec3(prop.rotationY),
-                rvec3(prop.rotationZ),
-                rvec3(prop.scale),
-            })
+            table.insert(propStrings, love.data.pack('string', 'z<fffffffffffffff',
+                (prop.path or ''),
+                prop.position[1], prop.position[2], prop.position[3],
+                prop.rotationX[1], prop.rotationX[2], prop.rotationX[3],
+                prop.rotationY[1], prop.rotationY[2], prop.rotationY[3],
+                prop.rotationZ[1], prop.rotationZ[2], prop.rotationZ[3],
+                prop.scale[1], prop.scale[2], prop.scale[3]
+            ))
         end
         table.insert(fileData, table.concat(propStrings))
     elseif type(data.props)=='string' then
