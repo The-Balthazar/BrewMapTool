@@ -407,21 +407,16 @@ function scmapUtils.writeDatastream(files, filename, dir)
     for i, v in ipairs(data.waveGenerators) do
         progressReport(dir, filename, "Processing wave generators", i, waveGenCount)
         table.insert(waveGenStrings, love.data.pack('string',
-            'zz<fffffffffffffffff',
+            'zz<fff f fff ff ff ff fff f',
             (v.textureName or ''),
             (v.rampName or ''),
             v.position[1], v.position[2], v.position[3],
             v.rotation,
             v.velocity[1], v.velocity[2], v.velocity[3],
-            v.lifeTimeFirst,
-            v.lifeTimeSecond,
-            v.periodFirst,
-            v.periodSecond,
-            v.scaleFirst,
-            v.scaleSecond,
-            v.frameCount,
-            v.frameRateFirst,
-            v.frameRateSecond,
+            v.lifeTimeFirst, v.lifeTimeSecond,
+            v.periodFirst, v.periodSecond,
+            v.scaleFirst, v.scaleSecond,
+            v.frameCount, v.frameRateFirst, v.frameRateSecond,
             v.stripCount
         ))
     end
@@ -466,7 +461,7 @@ function scmapUtils.writeDatastream(files, filename, dir)
         for i, path in ipairs(decal.textures) do
             table.insert(decalBuffer, love.data.pack('string', '<s4', path))
         end
-        table.insert(decalBuffer, love.data.pack('string', '<fffffffffff<i4',
+        table.insert(decalBuffer, love.data.pack('string', '<fff fff fff ff i4',
             decal.scale[1], decal.scale[2], decal.scale[3],
             decal.position[1], decal.position[2], decal.position[3],
             decal.rotation[1], decal.rotation[2], decal.rotation[3],
@@ -603,7 +598,7 @@ function scmapUtils.writeDatastream(files, filename, dir)
         local propStrings = {math.intToIBM(propCount)}
         for i, prop in ipairs(data.props) do
             progressReport(dir, filename, "Processing props", i, propCount)
-            table.insert(propStrings, love.data.pack('string', 'z<fffffffffffffff',
+            table.insert(propStrings, love.data.pack('string', 'z<fff fff fff fff fff',
                 (prop.path or ''),
                 prop.position[1], prop.position[2], prop.position[3],
                 prop.rotationX[1], prop.rotationX[2], prop.rotationX[3],
