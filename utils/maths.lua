@@ -15,16 +15,16 @@ function math.flipFormatBytes(bytes)
     )
 end
 
-local fficast   = require'ffi'.cast
-local ffistring = require'ffi'.string
-local ffinew    = require'ffi'.new
+--local fficast   = require'ffi'.cast
+--local ffistring = require'ffi'.string
+--local ffinew    = require'ffi'.new
 
-function math.IBMShort(bytes) return fficast('uint16_t*', bytes)[0] end
-function math.IMBUInt(bytes)  return fficast('uint32_t*', bytes)[0] end
-function math.IMBInt(bytes)   return fficast('int32_t*',  bytes)[0] end
-function math.IMBFloat(bytes) return fficast('float*',    bytes)[0] end
+function math.IBMShort(bytes) return (love.data.unpack('<I2', bytes)) end --fficast('uint16_t*', bytes)[0]
+function math.IMBUInt(bytes)  return (love.data.unpack('<I4', bytes)) end --fficast('uint32_t*', bytes)[0]
+function math.IMBInt(bytes)   return (love.data.unpack('<i4', bytes)) end --fficast('int32_t*',  bytes)[0]
+function math.IMBFloat(bytes) return (love.data.unpack('<f',  bytes)) end --fficast('float*',    bytes)[0]
 
-function math.shortToIBM(val) return ffistring(ffinew("uint16_t[1]", {val}), 4) end
-function math.uIntToIBM(val)  return ffistring(ffinew("uint32_t[1]", {val}), 4) end
-function math.intToIBM(val)   return ffistring(ffinew("int32_t[1]",  {val}), 4) end
-function math.floatToIBM(val) return ffistring(ffinew("float[1]",    {val}), 4) end
+function math.shortToIBM(val) return love.data.pack('string', '<I2', val) end --ffistring(ffinew("uint16_t[1]", {val}), 4)
+function math.uIntToIBM(val)  return love.data.pack('string', '<I4', val) end --ffistring(ffinew("uint32_t[1]", {val}), 4)
+function math.intToIBM(val)   return love.data.pack('string', '<i4', val) end --ffistring(ffinew("int32_t[1]",  {val}), 4)
+function math.floatToIBM(val) return love.data.pack('string', '<f',  val) end --ffistring(ffinew("float[1]",    {val}), 4)
