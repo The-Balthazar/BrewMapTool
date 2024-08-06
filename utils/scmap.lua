@@ -553,40 +553,44 @@ function scmapUtils.writeDatastream(files, filename, dir)
     progressReport(dir, filename, "Processing skyBox")
     if data.version>=60 then
         l = data.skyBox
-        vec3(l.position)
-        float(l.horizonHeight)
-        float(l.scale)
-        float(l.subHeight)
-        int(l.subDivAx)
-        int(l.subDivHeight)
-        float(l.zenithHeight)
-        vec3(l.horizonColor)
-        vec3(l.zenithColor)
-        float(l.decalGlowMultiplier)
 
-        stringNull(l.albedo)
-        stringNull(l.glow)
-
-        int(#l.planets)
+        table.insert(fileData, love.data.pack('string',
+            '<fff fff i4i4 f fff fff f zz I4',
+            l.position[1], l.position[2], l.position[3],
+            l.horizonHeight, l.scale, l.subHeight,
+            l.subDivAx, l.subDivHeight,
+            l.zenithHeight,
+            l.horizonColor[1], l.horizonColor[2], l.horizonColor[3],
+            l.zenithColor[1], l.zenithColor[2], l.zenithColor[3],
+            l.decalGlowMultiplier,
+            l.albedo, l.glow,
+            l.planets and #l.planets or 0
+        ))
         for i, planet in ipairs(l.planets) do
-            vec3(planet.position)
-            float(planet.rotation)
-            vec2(planet.scale)
-            vec4(planet.uv)
+            table.insert(fileData, love.data.pack('string',
+                '<fff f ff ffff',
+                planet.position[1], planet.position[2], planet.position[3],
+                planet.rotation,
+                planet.scale[1], planet.scale[2],
+                planet.uv[1], planet.uv[2], planet.uv[3], planet.uv[4]
+            ))
         end
-        table.insert(fileData, string.char(l.midColor[1]))
-        table.insert(fileData, string.char(l.midColor[2]))
-        table.insert(fileData, string.char(l.midColor[3]))
 
-        float(l.cirrusMultiplier)
-        vec3(l.cirrusColor)
-        stringNull(l.cirrusTexture)
-
-        int(#l.cirrusLayers)
+        table.insert(fileData, love.data.pack('string',
+            'BBB <f fff z I4',
+            l.midColor[1], l.midColor[2], l.midColor[3],
+            l.cirrusMultiplier,
+            l.cirrusColor[1], l.cirrusColor[2], l.cirrusColor[3],
+            l.cirrusTexture,
+            l.cirrusLayers and #l.cirrusLayers or 0
+        ))
         for i, layer in ipairs(l.cirrusLayers) do
-            vec2(layer.frequency)
-            float(layer.speed)
-            vec2(layer.direction)
+            table.insert(fileData, love.data.pack('string',
+                '<ff f ff',
+                layer.frequency[1], layer.frequency[2],
+                layer.speed,
+                layer.direction[1], layer.direction[2]
+            ))
         end
 
         float(l.clouds7)
