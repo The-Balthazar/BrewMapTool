@@ -476,9 +476,7 @@ function scmapUtils.writeDatastream(files, filename, dir)
     int(decalGroupCount)
     for i, group in ipairs(data.decalGroups) do
         progressReport(dir, filename, "Processing decal groups", i, decalGroupCount)
-        int(group.id)
-        stringNull(group.name)
-        int(#group.data)
+        table.insert(fileData, love.data.pack('string', '<i4 z I4', group.id, group.name, #group.data))
         for i, v in ipairs(group.data) do
             int(v)
         end
@@ -487,30 +485,26 @@ function scmapUtils.writeDatastream(files, filename, dir)
     --These values seem unused, but are either meant to be the pixel size of the normal, or the number of o-grids it's supposed to cover.
     --I'm assuming it's o-grids, not because it means I don't have to check the DDS header, but *because* I could check the DDS header
     --Unless they planned to support other formats, it'd just be duplicated data. So I'm assuming it's grits it's to cover.
+    local normalSize = {0,0}
     if files.normalMap and fileformats.isDDS(files.normalMap) then
-        int(data.size[1])
-        int(data.size[2])
+        normalSize = data.size
     elseif files.arbitrary and #files.arbitrary==4 and fileformats.isDDS(files.arbitrary[1]) then
-        int(data.size[1]*0.5)
-        int(data.size[2]*0.5)
-    else
-        int(0)
-        int(0)
+        normalSize[1] = data.size[1]*0.5
+        normalSize[2] = data.size[2]*0.5
     end
 
+    progressReport(dir, filename, files.normalMap and "Processing normalMap" or files.arbitrary and "Processing arbitrary files" or "Doing nothing")
+    table.insert(fileData, love.data.pack('string',
+        '<I4I4 I4', normalSize[1], normalSize[2],
+        files.normalMap and 1 or files.arbitrary and #files.arbitrary or 0
+    ))
+
     if files.normalMap then
-        progressReport(dir, filename, "Processing normalMap")
-        int(1)
         intFile(files.normalMap)
     elseif files.arbitrary then
-        progressReport(dir, filename, "Processing arbitrary files")
-        int(#files.arbitrary)
         for i, data in ipairs(files.arbitrary) do
             intFile(data)
         end
-    else
-        progressReport(dir, filename, "Doing nothing")
-        int(0)
     end
 
     progressReport(dir, filename, "Processing textureMaskLow")
