@@ -318,7 +318,7 @@ local function progressReport(dir, filename, message, i, t)
 end
 
 function scmapUtils.writeDatastream(files, filename, dir)
-    local fileData = {scmapDef.header[1],scmapDef.header[2],scmapDef.header[3],scmapDef.header[2]}
+    local fileData = {}
     local data = files['data.lua']
 
     progressReport(dir, filename, "starting packing")
@@ -331,75 +331,73 @@ function scmapUtils.writeDatastream(files, filename, dir)
     local function intFile(file) table.insert(fileData, math.intToIBM(file:len())..file) end
     local function stringNull(str) table.insert(fileData, (str or '')..'\000') end
 
-    float(data.size[1])
-    float(data.size[2])
-
-    table.insert(fileData, '\000\000\000\000\000\000')
-
-    intFile(files.previewImage)
-
-    int(data.version)
-
-    int(data.size[1])
-    int(data.size[2])
-    float(data.heightmapScale)
     local expectedHeightmapSize = (data.size[1]+1)*(data.size[2]+1)*2
     if #files['heightmap.raw']~=expectedHeightmapSize then print("Warning: Heightmap", #files['heightmap.raw'], "bytes. expected: ", expectedHeightmapSize, "bytes") end
     progressReport(dir, filename, "Processing heightmap.raw")
-    table.insert(fileData, files['heightmap.raw'])
-    table.insert(fileData, '\000')
-
-    stringNull(data.shaderPath)
-    stringNull(data.backgroundPath)
-    stringNull(data.skyCubePath)
+    table.insert(fileData, love.data.pack('string',
+        '<c4c4c4c4 ff i6 s4 I4 I4I4 f c'..expectedHeightmapSize..'B zzz I4',
+        scmapDef.header[1], scmapDef.header[2], scmapDef.header[3], scmapDef.header[2],
+        data.size[1], data.size[2],
+        0, --i6 Padding for alignment; I CBA faff with alignment stuff in the hopes that the rest lines up.
+        files.previewImage,
+        data.version,
+        data.size[1], data.size[2],
+        data.heightmapScale,
+        files['heightmap.raw'],--can't do as a z because it can contain 0's and that will error
+        0,
+        data.shaderPath, data.backgroundPath, data.skyCubePath,
+        #data.cubeMaps
+    ))
 
     progressReport(dir, filename, "Processing cubemaps")
-    int(#data.cubeMaps)
     for i, map in ipairs(data.cubeMaps) do
-        stringNull(map.name)
-        stringNull(map.path)
+        table.insert(fileData, love.data.pack('string', 'zz', map.name, map.path))
     end
 
     progressReport(dir, filename, "Processing lighting settings")
     local l = data.lightingSettings
-    float(l.lightingMultiplier)
-    vec3(l.sunDirection)
-    vec3(l.sunAmbience)
-    vec3(l.sunColor)
-    vec3(l.shadowFillColor)
-    vec4(l.specularColor)
-    float(l.bloom)
-    vec3(l.fogColor)
-    float(l.fogStart)
-    float(l.fogEnd)
+    table.insert(fileData, love.data.pack('string',
+        '<f fff fff fff fff ffff f fff ff',
+        l.lightingMultiplier,
+        l.sunDirection[1], l.sunDirection[2], l.sunDirection[3],
+        l.sunAmbience[1], l.sunAmbience[2], l.sunAmbience[3],
+        l.sunColor[1], l.sunColor[2], l.sunColor[3],
+        l.shadowFillColor[1], l.shadowFillColor[2], l.shadowFillColor[3],
+        l.specularColor[1], l.specularColor[2], l.specularColor[3], l.specularColor[4],
+        l.bloom,
+        l.fogColor[1], l.fogColor[2], l.fogColor[3],
+        l.fogStart,
+        l.fogEnd
+    ))
 
     progressReport(dir, filename, "Processing water settings")
     l = data.waterSettings
-    table.insert(fileData, string.char(l.waterPresent and 1 or 0))
-    float(l.elevation)
-    float(l.elevationDeep)
-    float(l.elevationAbyss)
-    vec3(l.surfaceColor)
-    vec2(l.colorLerp)
-    float(l.refractionScale)
-    float(l.fresnelBias)
-    float(l.fresnelPower)
-    float(l.unitReflection)
-    float(l.skyReflection)
-    float(l.sunShininess)
-    float(l.sunStrength)
-    vec3(l.sunDirection)
-    vec3(l.sunColor)
-    float(l.sunReflection)
-    float(l.sunGlow)
-    stringNull(l.texPathCubeMap)
-    stringNull(l.texPathWaterRamp)
-    vec4(l.waveNormalRepeats)
     if #l.waveTextures~=4 then print"Warning: waveTextures an unexpected array length: expected 4" end
-    for i, v in ipairs(l.waveTextures) do
-        vec2(v.movement)
-        stringNull(v.path)
-    end
+    table.insert(fileData, love.data.pack('string',
+        '<B fff fff ff fffffff fff fff ff zz ffff ffz ffz ffz ffz',
+        l.waterPresent and 1 or 0,
+        l.elevation, l.elevationDeep, l.elevationAbyss,
+        l.surfaceColor[1], l.surfaceColor[2], l.surfaceColor[3],
+        l.colorLerp[1], l.colorLerp[2],
+        l.refractionScale,
+        l.fresnelBias,
+        l.fresnelPower,
+        l.unitReflection,
+        l.skyReflection,
+        l.sunShininess,
+        l.sunStrength,
+        l.sunDirection[1], l.sunDirection[2], l.sunDirection[3],
+        l.sunColor[1], l.sunColor[2], l.sunColor[3],
+        l.sunReflection,
+        l.sunGlow,
+        l.texPathCubeMap,
+        l.texPathWaterRamp,--28
+        l.waveNormalRepeats[1], l.waveNormalRepeats[2], l.waveNormalRepeats[3], l.waveNormalRepeats[4],
+        l.waveTextures[1].movement[1], l.waveTextures[1].movement[2], l.waveTextures[1].path,
+        l.waveTextures[2].movement[1], l.waveTextures[2].movement[2], l.waveTextures[2].path,
+        l.waveTextures[3].movement[1], l.waveTextures[3].movement[2], l.waveTextures[3].path,
+        l.waveTextures[4].movement[1], l.waveTextures[4].movement[2], l.waveTextures[4].path
+    ))
 
     progressReport(dir, filename, "Processing wave generators")
     local waveGenCount = #data.waveGenerators
