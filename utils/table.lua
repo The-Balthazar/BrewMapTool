@@ -6,6 +6,7 @@ local reserved = {
     ['do']     = 'do',
     ['else']   = 'else',
     ['elseif'] = 'elseif',
+    ['goto']   = 'goto',
 
     ['end']      = 'end',
     ['false']    = 'false',
