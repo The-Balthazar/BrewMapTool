@@ -16,6 +16,7 @@ local reserved = {
 
     ['in']    = 'in',
     ['local'] = 'local',
+    ['global']= 'global',
     ['nil']   = 'nil',
     ['not']   = 'not',
     ['or']    = 'or',
