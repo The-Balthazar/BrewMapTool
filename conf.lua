@@ -9,7 +9,7 @@ function love.conf(t)
     t.modules.window = false
     t.modules.font = false
 
-    t.modules.image = false
+    t.modules.image = true
     t.modules.timer = false
     t.modules.audio = false
     t.modules.joystick = false
