@@ -173,6 +173,13 @@ function love.load(arg, unfilteredArg)
             resizable = true,
         })
         love.window.setTitle'BrewMapTool'
+    elseif arg[1]=='preview' then
+        local data, size = love.filesystem.read('data', arg[2])
+        if not data then
+            print(size)
+        else
+            scmapUtils.getPreviewDataFromScmapData(data, arg[3], arg[4])
+        end
     end
 end
 

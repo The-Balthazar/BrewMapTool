@@ -23,6 +23,37 @@ local function isBMP(file) return file:sub(1,2)=='BM' and file:len()==math.IMBIn
 
 local function getFormat(file) return isDDS(file) or isTGA(file) or isPNG(file) or isJPG(file) or isBMP(file) or 'unknown' end
 
+function scmapUtils.getPreviewDataFromScmapData(scmapData, outputFilename, format)
+    if not scmapUtils.validateHeader(scmapData) then return print"Unrecognised map header" end
+    local fileOffset = 16
+
+    local function readBytes(n)
+        assert(n>=0, 'Error: scmap read out of sync: readBytes fed a negative byte count')
+        if n==0 then return '' end
+        fileOffset = fileOffset+n
+        return scmapData:getString(fileOffset-n, n)
+    end
+
+    local function int() return math.IMBInt(readBytes(4)) end
+    local function float() return math.IMBFloat(readBytes(4)) end
+
+    float(--[[map width]])
+    float(--[[map height]])
+
+    if readBytes(6)~='\000\000\000\000\000\000' then return print"Unrecognised map file format: missing padding" end
+
+    local previewString = readBytes(int())
+    local previewFormat = getFormat(previewString)
+
+    if not format or previewFormat:lower()==format:lower() then
+        return previewString
+    end
+
+    return love.image.newImageData(
+        love.data.newByteData(previewString)
+    ):encode(format, outputFilename)
+end
+
 function scmapUtils.readDatastream(scmapData)
     if not scmapUtils.validateHeader(scmapData) then return print"Unrecognised map header" end
     local data = {}
