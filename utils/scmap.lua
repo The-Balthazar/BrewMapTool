@@ -103,20 +103,33 @@ function scmapUtils.readDatastream(scmapData)
     data.previewImage = intFile()
 
     data.version = int()
-    if data.version~=56 and data.version~=60 then return print("Unexpected scmap type version number", data.version) end
+
+    local supportedVersions = {
+        [53]=true,
+        [56]=true,
+        [60]=true,
+    }
+    if not supportedVersions[data.version] then return print("Unexpected scmap type version number", data.version) end
 
     data.size = {int(),int()}
     data.heightmapScale = float()
     data.heightmap = readBin((data.size[1]+1)*(data.size[2]+1)*2, 'raw')
-    if readBytes(1)~='\000' then return print"Unrecognised map file format: no null terminator after heightmap" end
+
+    if data.version>=56 and readBytes(1)~='\000' then
+        return print"Unrecognised map file format: no null terminator after heightmap"
+    end
 
     data.shaderPath = stringNull()
     data.backgroundPath = stringNull()
     data.skyCubePath = stringNull()
 
-    data.cubeMaps = {}
-    for i=1, int() do
-        table.insert(data.cubeMaps, {name = stringNull(), path = stringNull()})
+    if data.version>=56 then
+        data.cubeMaps = {}
+        for i=1, int() do
+            table.insert(data.cubeMaps, {name = stringNull(), path = stringNull()})
+        end
+    else
+        data.cubeMaps = {{name = "<default>", path = stringNull()}}
     end
 
     data.lightingSettings = {
@@ -183,21 +196,43 @@ function scmapUtils.readDatastream(scmapData)
         })
     end
 
-    data.miniMapContourInterval = int()
-    data.miniMapDeepWaterColor = math.formatBytes(readBytes(4))
-    data.miniMapContourColor = math.formatBytes(readBytes(4))
-    data.miniMapShoreColor = math.formatBytes(readBytes(4))
-    data.miniMapLandStartColor = math.formatBytes(readBytes(4))
-    data.miniMapLandEndColor = math.formatBytes(readBytes(4))
+    if data.version<56 then
+        stringNull()-- Apparently always "No Tileset"
+        local count = int()
+        data.textures = {}
+        data.normals = {}
 
-    if data.version>56 then
-        data.unknownFA = math.formatBytes(readBytes(4))
+        for i=1, count-1 do
+            data.textures[i] = {path = stringNull()}
+            data.normals[i] = {path = stringNull()}
+            data.textures[i].scale = float()
+            data.normals[i].scale = float()
+        end
+        for i=count, 9 do
+            data.textures[i] = {path = "", scale = 4}
+            data.normals[i] = {path = "", scale = 4}
+        end
+        data.textures[10] = {path = stringNull()}
+        data.normals[10] = {path = stringNull()}
+        data.textures[10].scale = float()
+        data.normals[10].scale = float()
+    else
+        data.miniMapContourInterval = int()
+        data.miniMapDeepWaterColor = math.formatBytes(readBytes(4))
+        data.miniMapContourColor = math.formatBytes(readBytes(4))
+        data.miniMapShoreColor = math.formatBytes(readBytes(4))
+        data.miniMapLandStartColor = math.formatBytes(readBytes(4))
+        data.miniMapLandEndColor = math.formatBytes(readBytes(4))
+
+        if data.version>56 then
+            data.unknownFA = math.formatBytes(readBytes(4))
+        end
+
+        data.textures = {}
+        data.normals = {}
+        for i=1, 10 do table.insert(data.textures, {path = stringNull(), scale = float()}) end
+        for i=1, 9  do table.insert(data.normals,  {path = stringNull(), scale = float()}) end
     end
-
-    data.textures = {}
-    data.normals = {}
-    for i=1, 10 do table.insert(data.textures, {path = stringNull(), scale = float()}) end
-    for i=1, 9  do table.insert(data.normals,  {path = stringNull(), scale = float()}) end
 
     data.unknown1 = math.formatBytes(readBytes(4))
     data.unknown2 = math.formatBytes(readBytes(4))
@@ -256,8 +291,12 @@ function scmapUtils.readDatastream(scmapData)
         end
     end
 
+    if data.version<56 then int() end
+
     data.textureMaskLow = intFile()
-    data.textureMaskHigh = intFile()
+    if data.version>=56 then
+        data.textureMaskHigh = intFile()
+    end
 
     local utilityTextures = int()
     if utilityTextures==1 --[[and peekBytes(9):sub(-5)=='DDS |']] then
@@ -274,6 +313,10 @@ function scmapUtils.readDatastream(scmapData)
     data.waterDepthBiasMask = readBin(halfSize, 'raw')
 
     data.terrainType = readBin(data.size[1]*data.size[2], 'raw')
+
+    if data.version<=52 then --Do we even know of any V52 or lower maps? I'm just copying this from the HazardX map code
+        readBytes(2)
+    end
 
     if data.version>=60 then
         data.skyBox = {
